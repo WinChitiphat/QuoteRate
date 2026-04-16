@@ -1,5 +1,7 @@
-const API_BASE = "https://api.frankfurter.dev/v1";
+const API_BASE = "https://open.er-api.com/v6/latest";
 const FEATURED_CURRENCIES = ["USD", "EUR", "GBP", "JPY", "THB", "AUD", "CAD"];
+
+const currencyNames = new Intl.DisplayNames(["en"], { type: "currency" });
 
 const state = {
   currencies: {},
@@ -27,17 +29,35 @@ const elements = {
   swapButton: document.getElementById("swapButton"),
 };
 
-async function fetchJson(path) {
-  const response = await fetch(`${API_BASE}${path}`);
+async function fetchJson(url) {
+  const response = await fetch(url);
   if (!response.ok) {
     throw new Error(`Request failed with status ${response.status}`);
   }
-  return response.json();
+
+  const data = await response.json();
+  if (data.result && data.result !== "success") {
+    throw new Error(`API returned ${data.result}`);
+  }
+
+  return data;
 }
 
-async function loadCurrencies() {
-  state.currencies = await fetchJson("/currencies");
-  populateCurrencySelects();
+function getCurrencyName(code) {
+  try {
+    return currencyNames.of(code) || code;
+  } catch {
+    return code;
+  }
+}
+
+function buildCurrenciesFromRates(rates) {
+  const codes = new Set([state.base, ...Object.keys(rates)]);
+  state.currencies = Object.fromEntries(
+    [...codes]
+      .sort((a, b) => a.localeCompare(b))
+      .map((code) => [code, getCurrencyName(code)])
+  );
 }
 
 function currencyOptionsMarkup() {
@@ -60,9 +80,13 @@ function populateCurrencySelects() {
 
 async function loadRates() {
   setStatus("Loading rates...");
-  const data = await fetchJson(`/latest?base=${state.base}`);
+
+  const data = await fetchJson(`${API_BASE}/${state.base}`);
   state.rates = data.rates;
-  state.lastUpdated = data.date;
+  state.lastUpdated = data.time_last_update_utc || null;
+
+  buildCurrenciesFromRates(state.rates);
+  populateCurrencySelects();
   renderAll();
   setStatus("Rates loaded");
 }
@@ -84,9 +108,10 @@ function renderUpdatedAt() {
     return;
   }
 
-  const parsed = new Date(`${state.lastUpdated}T00:00:00`);
+  const parsed = new Date(state.lastUpdated);
   elements.updatedText.textContent = new Intl.DateTimeFormat(undefined, {
     dateStyle: "medium",
+    timeStyle: "short",
   }).format(parsed);
 }
 
@@ -196,13 +221,14 @@ function bindEvents() {
   elements.amountInput.addEventListener("input", renderConversion);
   elements.searchInput.addEventListener("input", renderTable);
   elements.swapButton.addEventListener("click", swapCurrencies);
-  elements.refreshButton.addEventListener("click", loadRates);
+  elements.refreshButton.addEventListener("click", () => {
+    loadRates().catch(handleError);
+  });
 }
 
 async function init() {
   try {
     bindEvents();
-    await loadCurrencies();
     await loadRates();
 
     window.setInterval(() => {
