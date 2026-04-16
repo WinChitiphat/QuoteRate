@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import json
+import os
 import socket
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -11,8 +12,8 @@ from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
 
-HOST = "127.0.0.1"
-PORT = 8000
+HOST = "0.0.0.0"
+PORT = int(os.environ.get("PORT", "8000"))
 STREAM_URL = "https://labs-api.oanda.com/v2/rates?instruments=USD_THB&division=MKTD"
 BASE_DIR = Path(__file__).resolve().parent
 
