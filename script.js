@@ -1,4 +1,4 @@
-const API_BASE = "https://api.frankfurter.app";
+const API_BASE = "https://api.frankfurter.dev/v1";
 const FEATURED_CURRENCIES = ["USD", "EUR", "GBP", "JPY", "THB", "AUD", "CAD"];
 
 const state = {
@@ -43,7 +43,7 @@ async function loadCurrencies() {
 function currencyOptionsMarkup() {
   return Object.entries(state.currencies)
     .sort(([codeA], [codeB]) => codeA.localeCompare(codeB))
-    .map(([code, name]) => `<option value="${code}">${code} · ${name}</option>`)
+    .map(([code, name]) => `<option value="${code}">${code} - ${name}</option>`)
     .join("");
 }
 
@@ -60,7 +60,7 @@ function populateCurrencySelects() {
 
 async function loadRates() {
   setStatus("Loading rates...");
-  const data = await fetchJson(`/latest?from=${state.base}`);
+  const data = await fetchJson(`/latest?base=${state.base}`);
   state.rates = data.rates;
   state.lastUpdated = data.date;
   renderAll();
