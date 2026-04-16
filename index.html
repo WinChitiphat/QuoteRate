@@ -24,7 +24,7 @@
             <span class="brand-mark">QR</span>
             <div>
               <p class="eyebrow">QuoteRate</p>
-              <h1>Live USD/THB, cleaned up.</h1>
+              <h1>Live USD/THB with a clearer edge.</h1>
             </div>
           </div>
           <button id="refreshButton" class="ghost-button" type="button">Refresh Now</button>
@@ -32,77 +32,100 @@
 
         <div class="hero-grid">
           <section class="hero-copy panel">
+            <div class="eyebrow-pill">OANDA-backed live proxy</div>
             <p class="lede">
-              Track OANDA-backed `USD/THB` bid and ask prices through a lightweight same-origin proxy, with automatic checks every 30 seconds.
+              Watch USD/THB bid and ask prices through a lightweight Python relay, with automatic checks every 30 seconds and an instant midpoint converter.
             </p>
-            <div class="status-strip status-strip-wide">
-              <div>
+            <div class="status-strip">
+              <div class="status-tile">
                 <span class="meta-label">Status</span>
                 <strong id="statusText">Connecting...</strong>
               </div>
-              <div>
+              <div class="status-tile">
                 <span class="meta-label">Last Tick</span>
                 <strong id="updatedText">Checking...</strong>
               </div>
-              <div>
+              <div class="status-tile">
                 <span class="meta-label">Source</span>
-                <strong>OANDA via local proxy</strong>
-              </div>
-              <div>
-                <span class="meta-label">Refresh</span>
-                <strong>Every 30 seconds</strong>
+                <strong>OANDA via proxy</strong>
               </div>
             </div>
             <p class="note">
-              OANDA’s live stream is not callable directly from GitHub Pages because of cross-origin restrictions, so this version uses a same-origin Python endpoint to fetch and decode the latest `USD/THB` event safely.
+              OANDA's live stream is fetched server-side because the browser cannot call it directly from a static host. This dashboard reads the latest decoded USD/THB event from your same-origin API.
             </p>
           </section>
 
-          <section class="panel converter-panel">
-            <div class="panel-heading">
-              <p class="eyebrow">Quick Converter</p>
-              <h2>Mid-price calculator</h2>
-            </div>
-
-            <form id="converterForm" class="converter-form">
-              <label>
-                Amount
-                <input id="amountInput" type="number" min="0" step="0.01" value="100" />
-              </label>
-
-              <div class="currency-row">
-                <label>
-                  From
-                  <select id="fromCurrency">
-                    <option value="USD">USD - US Dollar</option>
-                    <option value="THB">THB - Thai Baht</option>
-                  </select>
-                </label>
-
-                <button id="swapButton" class="swap-button" type="button" aria-label="Swap currencies">
-                  ⇄
-                </button>
-
-                <label>
-                  To
-                  <select id="toCurrency">
-                    <option value="THB">THB - Thai Baht</option>
-                    <option value="USD">USD - US Dollar</option>
-                  </select>
-                </label>
+          <section class="hero-spotlight panel">
+            <p class="eyebrow">Live Mid Price</p>
+            <div class="quote-stack">
+              <div class="quote-row">
+                <span class="pair-badge">USD/THB</span>
+                <span id="marketPulse" class="pulse-chip">Waiting</span>
               </div>
-            </form>
-
-            <div class="result-card">
-              <p class="meta-label">Converted amount</p>
-              <p id="conversionResult" class="conversion-result">Loading...</p>
-              <p id="conversionDetail" class="conversion-detail">Waiting for live quote.</p>
+              <h2 id="heroPrice" class="hero-price">--.--</h2>
+              <p id="heroDetail" class="hero-detail">Waiting for the first quote.</p>
+            </div>
+            <div class="mini-stats">
+              <div class="mini-stat">
+                <span class="meta-label">Bid</span>
+                <strong id="heroBid">--.--</strong>
+              </div>
+              <div class="mini-stat">
+                <span class="meta-label">Ask</span>
+                <strong id="heroAsk">--.--</strong>
+              </div>
+              <div class="mini-stat">
+                <span class="meta-label">Spread</span>
+                <strong id="heroSpread">--.--</strong>
+              </div>
             </div>
           </section>
         </div>
       </header>
 
       <main class="content-grid">
+        <section class="panel converter-panel">
+          <div class="panel-heading">
+            <p class="eyebrow">Quick Converter</p>
+            <h2>Mid-price calculator</h2>
+          </div>
+
+          <form id="converterForm" class="converter-form">
+            <label>
+              Amount
+              <input id="amountInput" type="number" min="0" step="0.01" value="100" />
+            </label>
+
+            <div class="currency-row">
+              <label>
+                From
+                <select id="fromCurrency">
+                  <option value="USD">USD - US Dollar</option>
+                  <option value="THB">THB - Thai Baht</option>
+                </select>
+              </label>
+
+              <button id="swapButton" class="swap-button" type="button" aria-label="Swap currencies">
+                <span aria-hidden="true">↔</span>
+              </button>
+
+              <label>
+                To
+                <select id="toCurrency">
+                  <option value="THB">THB - Thai Baht</option>
+                  <option value="USD">USD - US Dollar</option>
+                </select>
+              </label>
+            </div>
+          </form>
+
+          <div class="result-card">
+            <p class="meta-label">Converted amount</p>
+            <p id="conversionResult" class="conversion-result">Loading...</p>
+            <p id="conversionDetail" class="conversion-detail">Waiting for live quote.</p>
+          </div>
+        </section>
+
         <section class="panel rates-panel">
           <div class="panel-heading">
             <p class="eyebrow">Live Snapshot</p>
@@ -114,7 +137,7 @@
         <section class="panel table-panel">
           <div class="panel-heading">
             <p class="eyebrow">Session Range</p>
-            <h2>Today’s quote context</h2>
+            <h2>Today's quote context</h2>
           </div>
 
           <div class="table-wrapper">

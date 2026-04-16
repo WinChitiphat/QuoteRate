@@ -14,6 +14,12 @@ const elements = {
   amountInput: document.getElementById("amountInput"),
   fromCurrency: document.getElementById("fromCurrency"),
   toCurrency: document.getElementById("toCurrency"),
+  heroPrice: document.getElementById("heroPrice"),
+  heroDetail: document.getElementById("heroDetail"),
+  heroBid: document.getElementById("heroBid"),
+  heroAsk: document.getElementById("heroAsk"),
+  heroSpread: document.getElementById("heroSpread"),
+  marketPulse: document.getElementById("marketPulse"),
   rateCards: document.getElementById("rateCards"),
   metricsTableBody: document.getElementById("metricsTableBody"),
   conversionResult: document.getElementById("conversionResult"),
@@ -63,6 +69,55 @@ function getMidPrice() {
   return (state.quote.bid + state.quote.ask) / 2;
 }
 
+function getMovementDirection() {
+  if (!state.quote) {
+    return "flat";
+  }
+
+  const currentMid = getMidPrice();
+  const closingMid = (state.quote.closingBid + state.quote.closingAsk) / 2;
+
+  if (currentMid > closingMid) {
+    return "up";
+  }
+
+  if (currentMid < closingMid) {
+    return "down";
+  }
+
+  return "flat";
+}
+
+function renderHeroQuote() {
+  if (!state.quote) {
+    elements.heroPrice.textContent = "--.--";
+    elements.heroDetail.textContent = "Waiting for the first quote.";
+    elements.heroBid.textContent = "--.--";
+    elements.heroAsk.textContent = "--.--";
+    elements.heroSpread.textContent = "--.--";
+    elements.marketPulse.textContent = "Waiting";
+    elements.marketPulse.className = "pulse-chip";
+    return;
+  }
+
+  const mid = getMidPrice();
+  const spread = state.quote.ask - state.quote.bid;
+  const direction = getMovementDirection();
+  const movementLabels = {
+    up: "Trading above close",
+    down: "Trading below close",
+    flat: "Near prior close",
+  };
+
+  elements.heroPrice.textContent = formatNumber(mid, 3);
+  elements.heroDetail.textContent = `Last server check ${formatDateTime(state.lastCheckedAt)}. Quote timestamp ${formatDateTime(state.quote.timestamp)}.`;
+  elements.heroBid.textContent = formatNumber(state.quote.bid, 3);
+  elements.heroAsk.textContent = formatNumber(state.quote.ask, 3);
+  elements.heroSpread.textContent = formatNumber(spread, 3);
+  elements.marketPulse.textContent = movementLabels[direction];
+  elements.marketPulse.className = `pulse-chip${direction === "flat" ? "" : ` is-${direction}`}`;
+}
+
 function renderConversion() {
   const amount = Number(elements.amountInput.value || 0);
   state.amount = amount;
@@ -91,23 +146,29 @@ function renderCards() {
 
   const spread = state.quote.ask - state.quote.bid;
   const mid = getMidPrice();
+  const closingMid = (state.quote.closingBid + state.quote.closingAsk) / 2;
+  const delta = mid - closingMid;
 
   elements.rateCards.innerHTML = `
     <article class="rate-card">
       <span class="rate-pair">${PAIR} Bid</span>
       <strong class="rate-value">${formatNumber(state.quote.bid, 3)}</strong>
+      <span class="rate-subvalue">Live buy-side quote</span>
     </article>
     <article class="rate-card">
       <span class="rate-pair">${PAIR} Ask</span>
       <strong class="rate-value">${formatNumber(state.quote.ask, 3)}</strong>
+      <span class="rate-subvalue">Live sell-side quote</span>
     </article>
     <article class="rate-card">
       <span class="rate-pair">Mid Price</span>
       <strong class="rate-value">${formatNumber(mid, 3)}</strong>
+      <span class="rate-subvalue">${delta >= 0 ? "+" : ""}${formatNumber(delta, 3)} versus close</span>
     </article>
     <article class="rate-card">
       <span class="rate-pair">Spread</span>
       <strong class="rate-value">${formatNumber(spread, 3)}</strong>
+      <span class="rate-subvalue">Ask minus bid</span>
     </article>
   `;
 }
@@ -155,6 +216,7 @@ function renderUpdatedAt() {
 }
 
 function renderAll() {
+  renderHeroQuote();
   renderUpdatedAt();
   renderCards();
   renderMetrics();
@@ -193,6 +255,7 @@ function handleError(error) {
   console.error(error);
   setStatus("Unable to load quote");
   elements.updatedText.textContent = "Check connection";
+  renderHeroQuote();
   elements.conversionResult.textContent = "Error";
   elements.conversionDetail.textContent = "The OANDA proxy could not be reached.";
   elements.rateCards.innerHTML = '<p class="empty-state">Could not load the live quote.</p>';
