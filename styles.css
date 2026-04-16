@@ -101,11 +101,11 @@ body::before {
   align-items: center;
   width: fit-content;
   margin-bottom: 1rem;
-  padding: 0.5rem 0.8rem;
+  padding: 0.35rem 0.65rem;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.55);
   color: var(--accent-strong);
-  font-size: 0.78rem;
+  font-size: 0.68rem;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -123,10 +123,11 @@ h2 {
 }
 
 h1 {
-  max-width: 11ch;
+  max-width: none;
+  white-space: nowrap;
   margin-bottom: 0;
   font-family: "Instrument Serif", serif;
-  font-size: clamp(3rem, 9vw, 6.2rem);
+  font-size: clamp(2.25rem, 5.2vw, 5rem);
   font-weight: 400;
 }
 
@@ -169,11 +170,11 @@ h2 {
 }
 
 .hero-copy {
-  grid-column: span 7;
+  grid-column: span 6;
 }
 
 .hero-spotlight {
-  grid-column: span 5;
+  grid-column: span 6;
   background:
     radial-gradient(circle at top right, rgba(243, 212, 188, 0.15), transparent 28%),
     linear-gradient(160deg, #191d18 0%, #232824 100%);
@@ -226,7 +227,7 @@ h2 {
 }
 
 .quote-stack {
-  margin: 0.8rem 0 1.2rem;
+  margin: 0.8rem 0 1rem;
 }
 
 .quote-row {
@@ -271,7 +272,7 @@ h2 {
 .hero-price {
   margin: 0.55rem 0;
   font-family: "Instrument Serif", serif;
-  font-size: clamp(3.2rem, 8vw, 5.3rem);
+  font-size: clamp(4rem, 9vw, 6.4rem);
   font-weight: 400;
   line-height: 0.92;
 }
@@ -284,6 +285,7 @@ h2 {
 
 .mini-stats {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 1rem;
 }
 
 .mini-stat {
@@ -297,6 +299,20 @@ h2 {
   display: block;
   margin-top: 0.35rem;
   font-size: 1.15rem;
+}
+
+.secondary-rate {
+  padding: 1rem 1.05rem;
+  border-radius: 1.2rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.secondary-rate strong {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 1.8rem;
+  color: #fff4e9;
 }
 
 .ghost-button,
@@ -328,11 +344,11 @@ h2 {
 }
 
 .rates-panel {
-  grid-column: span 3;
+  grid-column: span 4;
 }
 
 .table-panel {
-  grid-column: span 7;
+  grid-column: span 8;
 }
 
 .converter-form {
@@ -422,6 +438,14 @@ select:focus {
 
 .rate-card:nth-child(4) {
   animation-delay: 240ms;
+}
+
+.rate-card:nth-child(5) {
+  animation-delay: 320ms;
+}
+
+.rate-card:nth-child(6) {
+  animation-delay: 400ms;
 }
 
 .rate-pair,
@@ -536,5 +560,9 @@ tbody tr:hover {
 
   .hero-price {
     font-size: clamp(2.8rem, 14vw, 4rem);
+  }
+
+  h1 {
+    white-space: normal;
   }
 }

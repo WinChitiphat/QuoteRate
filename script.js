@@ -1,4 +1,4 @@
-const API_URL = "/api/usd-thb";
+const API_URL = "/api/dashboard";
 const PAIR = "USD/THB";
 const POLL_INTERVAL_MS = 30_000;
 
@@ -6,7 +6,7 @@ const state = {
   amount: 100,
   from: "USD",
   to: "THB",
-  quote: null,
+  dashboard: null,
   lastCheckedAt: null,
 };
 
@@ -19,6 +19,7 @@ const elements = {
   heroBid: document.getElementById("heroBid"),
   heroAsk: document.getElementById("heroAsk"),
   heroSpread: document.getElementById("heroSpread"),
+  heroEurThb: document.getElementById("heroEurThb"),
   marketPulse: document.getElementById("marketPulse"),
   rateCards: document.getElementById("rateCards"),
   metricsTableBody: document.getElementById("metricsTableBody"),
@@ -61,21 +62,31 @@ function formatDateTime(value) {
   }).format(new Date(value));
 }
 
+function getUsdThbQuote() {
+  return state.dashboard?.usd_thb ?? null;
+}
+
+function getDerivedRates() {
+  return state.dashboard?.derived ?? null;
+}
+
 function getMidPrice() {
-  if (!state.quote) {
+  const quote = getUsdThbQuote();
+  if (!quote) {
     return null;
   }
 
-  return (state.quote.bid + state.quote.ask) / 2;
+  return (quote.bid + quote.ask) / 2;
 }
 
 function getMovementDirection() {
-  if (!state.quote) {
+  const quote = getUsdThbQuote();
+  if (!quote) {
     return "flat";
   }
 
   const currentMid = getMidPrice();
-  const closingMid = (state.quote.closingBid + state.quote.closingAsk) / 2;
+  const closingMid = (quote.closingBid + quote.closingAsk) / 2;
 
   if (currentMid > closingMid) {
     return "up";
@@ -89,19 +100,23 @@ function getMovementDirection() {
 }
 
 function renderHeroQuote() {
-  if (!state.quote) {
+  const quote = getUsdThbQuote();
+  const derived = getDerivedRates();
+
+  if (!quote || !derived) {
     elements.heroPrice.textContent = "--.--";
     elements.heroDetail.textContent = "Waiting for the first quote.";
     elements.heroBid.textContent = "--.--";
     elements.heroAsk.textContent = "--.--";
     elements.heroSpread.textContent = "--.--";
+    elements.heroEurThb.textContent = "--.--";
     elements.marketPulse.textContent = "Waiting";
     elements.marketPulse.className = "pulse-chip";
     return;
   }
 
   const mid = getMidPrice();
-  const spread = state.quote.ask - state.quote.bid;
+  const spread = quote.ask - quote.bid;
   const direction = getMovementDirection();
   const movementLabels = {
     up: "Trading above close",
@@ -110,10 +125,11 @@ function renderHeroQuote() {
   };
 
   elements.heroPrice.textContent = formatNumber(mid, 3);
-  elements.heroDetail.textContent = `Last server check ${formatDateTime(state.lastCheckedAt)}. Quote timestamp ${formatDateTime(state.quote.timestamp)}.`;
-  elements.heroBid.textContent = formatNumber(state.quote.bid, 3);
-  elements.heroAsk.textContent = formatNumber(state.quote.ask, 3);
+  elements.heroDetail.textContent = `Last server check ${formatDateTime(state.lastCheckedAt)}. Quote timestamp ${formatDateTime(quote.timestamp)}.`;
+  elements.heroBid.textContent = formatNumber(quote.bid, 3);
+  elements.heroAsk.textContent = formatNumber(quote.ask, 3);
   elements.heroSpread.textContent = formatNumber(spread, 3);
+  elements.heroEurThb.textContent = formatNumber(derived.eur_thb_mid, 3);
   elements.marketPulse.textContent = movementLabels[direction];
   elements.marketPulse.className = `pulse-chip${direction === "flat" ? "" : ` is-${direction}`}`;
 }
@@ -139,25 +155,28 @@ function renderConversion() {
 }
 
 function renderCards() {
-  if (!state.quote) {
+  const quote = getUsdThbQuote();
+  const derived = getDerivedRates();
+
+  if (!quote || !derived) {
     elements.rateCards.innerHTML = '<p class="empty-state">Waiting for the first live quote.</p>';
     return;
   }
 
-  const spread = state.quote.ask - state.quote.bid;
+  const spread = quote.ask - quote.bid;
   const mid = getMidPrice();
-  const closingMid = (state.quote.closingBid + state.quote.closingAsk) / 2;
+  const closingMid = (quote.closingBid + quote.closingAsk) / 2;
   const delta = mid - closingMid;
 
   elements.rateCards.innerHTML = `
     <article class="rate-card">
       <span class="rate-pair">${PAIR} Bid</span>
-      <strong class="rate-value">${formatNumber(state.quote.bid, 3)}</strong>
+      <strong class="rate-value">${formatNumber(quote.bid, 3)}</strong>
       <span class="rate-subvalue">Live buy-side quote</span>
     </article>
     <article class="rate-card">
       <span class="rate-pair">${PAIR} Ask</span>
-      <strong class="rate-value">${formatNumber(state.quote.ask, 3)}</strong>
+      <strong class="rate-value">${formatNumber(quote.ask, 3)}</strong>
       <span class="rate-subvalue">Live sell-side quote</span>
     </article>
     <article class="rate-card">
@@ -166,15 +185,28 @@ function renderCards() {
       <span class="rate-subvalue">${delta >= 0 ? "+" : ""}${formatNumber(delta, 3)} versus close</span>
     </article>
     <article class="rate-card">
-      <span class="rate-pair">Spread</span>
-      <strong class="rate-value">${formatNumber(spread, 3)}</strong>
-      <span class="rate-subvalue">Ask minus bid</span>
+      <span class="rate-pair">EUR/THB</span>
+      <strong class="rate-value">${formatNumber(derived.eur_thb_mid, 3)}</strong>
+      <span class="rate-subvalue">Derived from EUR/USD and USD/THB</span>
+    </article>
+    <article class="rate-card">
+      <span class="rate-pair">USD/THB + 1% fee</span>
+      <strong class="rate-value">${formatNumber(derived.usd_thb_fee_1pct, 3)}</strong>
+      <span class="rate-subvalue">Typical service markup scenario</span>
+    </article>
+    <article class="rate-card">
+      <span class="rate-pair">USD/THB + 3% fee</span>
+      <strong class="rate-value">${formatNumber(derived.usd_thb_fee_3pct, 3)}</strong>
+      <span class="rate-subvalue">Heavier card or kiosk markup</span>
     </article>
   `;
 }
 
 function renderMetrics() {
-  if (!state.quote) {
+  const quote = getUsdThbQuote();
+  const derived = getDerivedRates();
+
+  if (!quote || !derived) {
     elements.metricsTableBody.innerHTML = `
       <tr>
         <td colspan="2" class="empty-state">Waiting for the first live quote.</td>
@@ -185,15 +217,15 @@ function renderMetrics() {
 
   const rows = [
     ["Pair", PAIR],
-    ["Timestamp", formatDateTime(state.quote.timestamp)],
-    ["Opening Bid", formatNumber(state.quote.openingBid, 3)],
-    ["Opening Ask", formatNumber(state.quote.openingAsk, 3)],
-    ["Closing Bid", formatNumber(state.quote.closingBid, 3)],
-    ["Closing Ask", formatNumber(state.quote.closingAsk, 3)],
-    ["Session High", formatNumber(state.quote.high, 3)],
-    ["Session Low", formatNumber(state.quote.low, 3)],
-    ["Pip Location", String(state.quote.pipLocation)],
-    ["Extra Precision", String(state.quote.extraPrecision)],
+    ["Timestamp", formatDateTime(quote.timestamp)],
+    ["Opening Bid", formatNumber(quote.openingBid, 3)],
+    ["Opening Ask", formatNumber(quote.openingAsk, 3)],
+    ["Closing Bid", formatNumber(quote.closingBid, 3)],
+    ["Closing Ask", formatNumber(quote.closingAsk, 3)],
+    ["Session High", formatNumber(quote.high, 3)],
+    ["Session Low", formatNumber(quote.low, 3)],
+    ["EUR/USD Mid", formatNumber((state.dashboard.eur_usd.bid + state.dashboard.eur_usd.ask) / 2, 5)],
+    ["EUR/THB Mid", formatNumber(derived.eur_thb_mid, 3)],
     ["Checked At", formatDateTime(state.lastCheckedAt)],
   ];
 
@@ -210,9 +242,8 @@ function renderMetrics() {
 }
 
 function renderUpdatedAt() {
-  elements.updatedText.textContent = state.quote
-    ? formatDateTime(state.quote.timestamp)
-    : "Waiting for data";
+  const quote = getUsdThbQuote();
+  elements.updatedText.textContent = quote ? formatDateTime(quote.timestamp) : "Waiting for data";
 }
 
 function renderAll() {
@@ -227,7 +258,7 @@ async function loadQuote() {
   setStatus("Refreshing quote...");
   const data = await fetchQuote();
 
-  state.quote = data;
+  state.dashboard = data;
   state.lastCheckedAt = new Date().toISOString();
 
   renderAll();

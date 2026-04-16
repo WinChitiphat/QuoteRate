@@ -14,7 +14,7 @@ from urllib.request import Request, urlopen
 
 HOST = "0.0.0.0"
 PORT = int(os.environ.get("PORT", "8000"))
-STREAM_URL = "https://labs-api.oanda.com/v2/rates?instruments=USD_THB&division=MKTD"
+STREAM_URL_TEMPLATE = "https://labs-api.oanda.com/v2/rates?instruments={instrument}&division=MKTD"
 BASE_DIR = Path(__file__).resolve().parent
 
 
@@ -59,9 +59,9 @@ def decode_oanda_payload(encoded: str) -> dict[str, Any]:
     return json.loads(decoded.decode("utf-8"))
 
 
-def fetch_oanda_quote() -> dict[str, Any]:
+def fetch_oanda_quote(instrument: str) -> dict[str, Any]:
     request = Request(
-        STREAM_URL,
+        STREAM_URL_TEMPLATE.format(instrument=instrument),
         headers={
             "Accept": "text/event-stream",
             "User-Agent": "QuoteRate/1.0",
@@ -80,6 +80,25 @@ def fetch_oanda_quote() -> dict[str, Any]:
     raise RuntimeError("No OANDA rate event received")
 
 
+def build_dashboard_payload() -> dict[str, Any]:
+    usd_thb = fetch_oanda_quote("USD_THB")
+    eur_usd = fetch_oanda_quote("EUR_USD")
+
+    usd_thb_mid = (usd_thb["bid"] + usd_thb["ask"]) / 2
+    eur_usd_mid = (eur_usd["bid"] + eur_usd["ask"]) / 2
+    eur_thb_mid = eur_usd_mid * usd_thb_mid
+
+    return {
+        "usd_thb": usd_thb,
+        "eur_usd": eur_usd,
+        "derived": {
+            "eur_thb_mid": round(eur_thb_mid, 6),
+            "usd_thb_fee_1pct": round(usd_thb_mid * 1.01, 6),
+            "usd_thb_fee_3pct": round(usd_thb_mid * 1.03, 6),
+        },
+    }
+
+
 class QuoteRateHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, directory=str(BASE_DIR), **kwargs)
@@ -91,6 +110,10 @@ class QuoteRateHandler(SimpleHTTPRequestHandler):
             self.handle_usd_thb()
             return
 
+        if parsed.path == "/api/dashboard":
+            self.handle_dashboard()
+            return
+
         if parsed.path == "/healthz":
             self.send_json({"ok": True})
             return
@@ -99,9 +122,16 @@ class QuoteRateHandler(SimpleHTTPRequestHandler):
 
     def handle_usd_thb(self) -> None:
         try:
-            payload = fetch_oanda_quote()
+            payload = fetch_oanda_quote("USD_THB")
             self.send_json(payload)
         except (TimeoutError, socket.timeout, URLError, RuntimeError, json.JSONDecodeError, base64.binascii.Error) as error:
+            self.send_json({"error": str(error)}, status=502)
+
+    def handle_dashboard(self) -> None:
+        try:
+            payload = build_dashboard_payload()
+            self.send_json(payload)
+        except (TimeoutError, socket.timeout, URLError, RuntimeError, json.JSONDecodeError, base64.binascii.Error, KeyError) as error:
             self.send_json({"error": str(error)}, status=502)
 
     def send_json(self, payload: dict[str, Any], status: int = 200) -> None:
