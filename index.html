@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QuoteRate | Free Exchange Rates</title>
+    <meta
+      name="description"
+      content="QuoteRate is a fast, free website for checking the latest exchange rates and converting currencies."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Instrument+Serif:ital@0;1&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <nav class="topbar">
+          <div class="brand-lockup">
+            <span class="brand-mark">QR</span>
+            <div>
+              <p class="eyebrow">QuoteRate</p>
+              <h1>Free exchange rates without the clutter.</h1>
+            </div>
+          </div>
+          <button id="refreshButton" class="ghost-button" type="button">Refresh</button>
+        </nav>
+
+        <div class="hero-grid">
+          <section class="hero-copy panel">
+            <p class="lede">
+              Track the latest reference rates, compare currencies, and make quick conversions from a clean browser-based dashboard.
+            </p>
+            <div class="status-strip">
+              <div>
+                <span class="meta-label">Status</span>
+                <strong id="statusText">Loading rates...</strong>
+              </div>
+              <div>
+                <span class="meta-label">Updated</span>
+                <strong id="updatedText">Checking...</strong>
+              </div>
+              <div>
+                <span class="meta-label">Source</span>
+                <strong>Frankfurter</strong>
+              </div>
+            </div>
+            <p class="note">
+              Free APIs usually provide reference rates, not broker-grade tick-by-tick forex prices. This site refreshes often, but the source data cadence depends on the provider.
+            </p>
+          </section>
+
+          <section class="panel converter-panel">
+            <div class="panel-heading">
+              <p class="eyebrow">Quick Converter</p>
+              <h2>Convert instantly</h2>
+            </div>
+
+            <form id="converterForm" class="converter-form">
+              <label>
+                Amount
+                <input id="amountInput" type="number" min="0" step="0.01" value="100" />
+              </label>
+
+              <div class="currency-row">
+                <label>
+                  From
+                  <select id="fromCurrency"></select>
+                </label>
+
+                <button id="swapButton" class="swap-button" type="button" aria-label="Swap currencies">
+                  ⇄
+                </button>
+
+                <label>
+                  To
+                  <select id="toCurrency"></select>
+                </label>
+              </div>
+            </form>
+
+            <div class="result-card">
+              <p class="meta-label">Converted amount</p>
+              <p id="conversionResult" class="conversion-result">Loading...</p>
+              <p id="conversionDetail" class="conversion-detail">Fetching latest rates.</p>
+            </div>
+          </section>
+        </div>
+      </header>
+
+      <main class="content-grid">
+        <section class="panel rates-panel">
+          <div class="panel-heading">
+            <p class="eyebrow">Major Pairs</p>
+            <h2>Snapshot</h2>
+          </div>
+          <div id="rateCards" class="rate-cards" aria-live="polite"></div>
+        </section>
+
+        <section class="panel table-panel">
+          <div class="panel-heading">
+            <p class="eyebrow">All Rates</p>
+            <h2>Base currency explorer</h2>
+          </div>
+
+          <div class="table-toolbar">
+            <label>
+              Base
+              <select id="baseCurrency"></select>
+            </label>
+
+            <label>
+              Search
+              <input id="searchInput" type="search" placeholder="Filter by code or name" />
+            </label>
+          </div>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Name</th>
+                  <th>Rate</th>
+                </tr>
+              </thead>
+              <tbody id="ratesTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
