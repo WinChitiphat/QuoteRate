@@ -11,6 +11,7 @@ const state = {
   from: "USD",
   to: "THB",
   lastUpdated: null,
+  nextUpdated: null,
 };
 
 const elements = {
@@ -25,6 +26,7 @@ const elements = {
   conversionDetail: document.getElementById("conversionDetail"),
   statusText: document.getElementById("statusText"),
   updatedText: document.getElementById("updatedText"),
+  nextUpdatedText: document.getElementById("nextUpdatedText"),
   refreshButton: document.getElementById("refreshButton"),
   swapButton: document.getElementById("swapButton"),
 };
@@ -84,11 +86,12 @@ async function loadRates() {
   const data = await fetchJson(`${API_BASE}/${state.base}`);
   state.rates = data.rates;
   state.lastUpdated = data.time_last_update_utc || null;
+  state.nextUpdated = data.time_next_update_utc || null;
 
   buildCurrenciesFromRates(state.rates);
   populateCurrencySelects();
   renderAll();
-  setStatus("Rates loaded");
+  setStatus("Rates checked");
 }
 
 function setStatus(message) {
@@ -105,6 +108,7 @@ function formatNumber(value, maximumFractionDigits = 4) {
 function renderUpdatedAt() {
   if (!state.lastUpdated) {
     elements.updatedText.textContent = "Unavailable";
+    elements.nextUpdatedText.textContent = "Unavailable";
     return;
   }
 
@@ -113,6 +117,17 @@ function renderUpdatedAt() {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(parsed);
+
+  if (!state.nextUpdated) {
+    elements.nextUpdatedText.textContent = "Unavailable";
+    return;
+  }
+
+  const nextParsed = new Date(state.nextUpdated);
+  elements.nextUpdatedText.textContent = new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(nextParsed);
 }
 
 function getRate(code) {
@@ -233,7 +248,7 @@ async function init() {
 
     window.setInterval(() => {
       loadRates().catch(handleError);
-    }, 60_000);
+    }, 30_000);
   } catch (error) {
     handleError(error);
   }
@@ -243,6 +258,7 @@ function handleError(error) {
   console.error(error);
   setStatus("Unable to load rates");
   elements.updatedText.textContent = "Check connection";
+  elements.nextUpdatedText.textContent = "Check connection";
   elements.conversionResult.textContent = "Error";
   elements.conversionDetail.textContent = "The API could not be reached right now.";
   elements.rateCards.innerHTML = '<p class="empty-state">Could not load featured rates.</p>';
