@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>QuoteRate | Free Exchange Rates</title>
+    <title>QuoteRate | Live USD/THB</title>
     <meta
       name="description"
-      content="QuoteRate is a fast, free website for checking the latest exchange rates and converting currencies."
+      content="QuoteRate tracks the live USD/THB exchange rate using an OANDA-backed proxy."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -24,44 +24,44 @@
             <span class="brand-mark">QR</span>
             <div>
               <p class="eyebrow">QuoteRate</p>
-              <h1>Free exchange rates without the clutter.</h1>
+              <h1>Live USD/THB, cleaned up.</h1>
             </div>
           </div>
-          <button id="refreshButton" class="ghost-button" type="button">Refresh</button>
+          <button id="refreshButton" class="ghost-button" type="button">Refresh Now</button>
         </nav>
 
         <div class="hero-grid">
           <section class="hero-copy panel">
             <p class="lede">
-              Track the latest reference rates, compare currencies, and make quick conversions from a clean browser-based dashboard.
+              Track OANDA-backed `USD/THB` bid and ask prices through a lightweight same-origin proxy, with automatic checks every 30 seconds.
             </p>
-            <div class="status-strip">
+            <div class="status-strip status-strip-wide">
               <div>
                 <span class="meta-label">Status</span>
-                <strong id="statusText">Loading rates...</strong>
+                <strong id="statusText">Connecting...</strong>
               </div>
               <div>
-                <span class="meta-label">Updated</span>
+                <span class="meta-label">Last Tick</span>
                 <strong id="updatedText">Checking...</strong>
               </div>
               <div>
-                <span class="meta-label">Next Provider Update</span>
-                <strong id="nextUpdatedText">Checking...</strong>
+                <span class="meta-label">Source</span>
+                <strong>OANDA via local proxy</strong>
               </div>
               <div>
-                <span class="meta-label">Source</span>
-                <strong>ExchangeRate-API Open</strong>
+                <span class="meta-label">Refresh</span>
+                <strong>Every 30 seconds</strong>
               </div>
             </div>
             <p class="note">
-              This site checks for updates every 30 seconds and also refreshes on request. The current free provider updates its underlying rates once per day, so repeated checks may show the same value until the provider publishes a new snapshot.
+              OANDA’s live stream is not callable directly from GitHub Pages because of cross-origin restrictions, so this version uses a same-origin Python endpoint to fetch and decode the latest `USD/THB` event safely.
             </p>
           </section>
 
           <section class="panel converter-panel">
             <div class="panel-heading">
               <p class="eyebrow">Quick Converter</p>
-              <h2>Convert instantly</h2>
+              <h2>Mid-price calculator</h2>
             </div>
 
             <form id="converterForm" class="converter-form">
@@ -73,7 +73,10 @@
               <div class="currency-row">
                 <label>
                   From
-                  <select id="fromCurrency"></select>
+                  <select id="fromCurrency">
+                    <option value="USD">USD - US Dollar</option>
+                    <option value="THB">THB - Thai Baht</option>
+                  </select>
                 </label>
 
                 <button id="swapButton" class="swap-button" type="button" aria-label="Swap currencies">
@@ -82,7 +85,10 @@
 
                 <label>
                   To
-                  <select id="toCurrency"></select>
+                  <select id="toCurrency">
+                    <option value="THB">THB - Thai Baht</option>
+                    <option value="USD">USD - US Dollar</option>
+                  </select>
                 </label>
               </div>
             </form>
@@ -90,7 +96,7 @@
             <div class="result-card">
               <p class="meta-label">Converted amount</p>
               <p id="conversionResult" class="conversion-result">Loading...</p>
-              <p id="conversionDetail" class="conversion-detail">Fetching latest rates.</p>
+              <p id="conversionDetail" class="conversion-detail">Waiting for live quote.</p>
             </div>
           </section>
         </div>
@@ -99,40 +105,27 @@
       <main class="content-grid">
         <section class="panel rates-panel">
           <div class="panel-heading">
-            <p class="eyebrow">Major Pairs</p>
-            <h2>Snapshot</h2>
+            <p class="eyebrow">Live Snapshot</p>
+            <h2>Bid, ask, spread</h2>
           </div>
           <div id="rateCards" class="rate-cards" aria-live="polite"></div>
         </section>
 
         <section class="panel table-panel">
           <div class="panel-heading">
-            <p class="eyebrow">All Rates</p>
-            <h2>Base currency explorer</h2>
-          </div>
-
-          <div class="table-toolbar">
-            <label>
-              Base
-              <select id="baseCurrency"></select>
-            </label>
-
-            <label>
-              Search
-              <input id="searchInput" type="search" placeholder="Filter by code or name" />
-            </label>
+            <p class="eyebrow">Session Range</p>
+            <h2>Today’s quote context</h2>
           </div>
 
           <div class="table-wrapper">
             <table>
               <thead>
                 <tr>
-                  <th>Code</th>
-                  <th>Name</th>
-                  <th>Rate</th>
+                  <th>Metric</th>
+                  <th>Value</th>
                 </tr>
               </thead>
-              <tbody id="ratesTableBody"></tbody>
+              <tbody id="metricsTableBody"></tbody>
             </table>
           </div>
         </section>

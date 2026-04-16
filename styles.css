@@ -168,6 +168,10 @@ h2 {
   margin-bottom: 1rem;
 }
 
+.status-strip-wide {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .status-strip strong,
 .note {
   display: block;

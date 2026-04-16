@@ -1,97 +1,36 @@
-const API_BASE = "https://open.er-api.com/v6/latest";
-const FEATURED_CURRENCIES = ["USD", "EUR", "GBP", "JPY", "THB", "AUD", "CAD"];
-
-const currencyNames = new Intl.DisplayNames(["en"], { type: "currency" });
+const API_URL = "/api/usd-thb";
+const PAIR = "USD/THB";
+const POLL_INTERVAL_MS = 30_000;
 
 const state = {
-  currencies: {},
-  base: "USD",
-  rates: {},
   amount: 100,
   from: "USD",
   to: "THB",
-  lastUpdated: null,
-  nextUpdated: null,
+  quote: null,
+  lastCheckedAt: null,
 };
 
 const elements = {
-  baseCurrency: document.getElementById("baseCurrency"),
+  amountInput: document.getElementById("amountInput"),
   fromCurrency: document.getElementById("fromCurrency"),
   toCurrency: document.getElementById("toCurrency"),
-  amountInput: document.getElementById("amountInput"),
-  searchInput: document.getElementById("searchInput"),
   rateCards: document.getElementById("rateCards"),
-  ratesTableBody: document.getElementById("ratesTableBody"),
+  metricsTableBody: document.getElementById("metricsTableBody"),
   conversionResult: document.getElementById("conversionResult"),
   conversionDetail: document.getElementById("conversionDetail"),
   statusText: document.getElementById("statusText"),
   updatedText: document.getElementById("updatedText"),
-  nextUpdatedText: document.getElementById("nextUpdatedText"),
   refreshButton: document.getElementById("refreshButton"),
   swapButton: document.getElementById("swapButton"),
 };
 
-async function fetchJson(url) {
-  const response = await fetch(url);
+async function fetchQuote() {
+  const response = await fetch(API_URL, { cache: "no-store" });
   if (!response.ok) {
     throw new Error(`Request failed with status ${response.status}`);
   }
 
-  const data = await response.json();
-  if (data.result && data.result !== "success") {
-    throw new Error(`API returned ${data.result}`);
-  }
-
-  return data;
-}
-
-function getCurrencyName(code) {
-  try {
-    return currencyNames.of(code) || code;
-  } catch {
-    return code;
-  }
-}
-
-function buildCurrenciesFromRates(rates) {
-  const codes = new Set([state.base, ...Object.keys(rates)]);
-  state.currencies = Object.fromEntries(
-    [...codes]
-      .sort((a, b) => a.localeCompare(b))
-      .map((code) => [code, getCurrencyName(code)])
-  );
-}
-
-function currencyOptionsMarkup() {
-  return Object.entries(state.currencies)
-    .sort(([codeA], [codeB]) => codeA.localeCompare(codeB))
-    .map(([code, name]) => `<option value="${code}">${code} - ${name}</option>`)
-    .join("");
-}
-
-function populateCurrencySelects() {
-  const options = currencyOptionsMarkup();
-  elements.baseCurrency.innerHTML = options;
-  elements.fromCurrency.innerHTML = options;
-  elements.toCurrency.innerHTML = options;
-
-  elements.baseCurrency.value = state.base;
-  elements.fromCurrency.value = state.from;
-  elements.toCurrency.value = state.to;
-}
-
-async function loadRates() {
-  setStatus("Loading rates...");
-
-  const data = await fetchJson(`${API_BASE}/${state.base}`);
-  state.rates = data.rates;
-  state.lastUpdated = data.time_last_update_utc || null;
-  state.nextUpdated = data.time_next_update_utc || null;
-
-  buildCurrenciesFromRates(state.rates);
-  populateCurrencySelects();
-  renderAll();
-  setStatus("Rates checked");
+  return response.json();
 }
 
 function setStatus(message) {
@@ -105,37 +44,23 @@ function formatNumber(value, maximumFractionDigits = 4) {
   }).format(value);
 }
 
-function renderUpdatedAt() {
-  if (!state.lastUpdated) {
-    elements.updatedText.textContent = "Unavailable";
-    elements.nextUpdatedText.textContent = "Unavailable";
-    return;
+function formatDateTime(value) {
+  if (!value) {
+    return "Unavailable";
   }
 
-  const parsed = new Date(state.lastUpdated);
-  elements.updatedText.textContent = new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat(undefined, {
     dateStyle: "medium",
-    timeStyle: "short",
-  }).format(parsed);
-
-  if (!state.nextUpdated) {
-    elements.nextUpdatedText.textContent = "Unavailable";
-    return;
-  }
-
-  const nextParsed = new Date(state.nextUpdated);
-  elements.nextUpdatedText.textContent = new Intl.DateTimeFormat(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(nextParsed);
+    timeStyle: "medium",
+  }).format(new Date(value));
 }
 
-function getRate(code) {
-  if (code === state.base) {
-    return 1;
+function getMidPrice() {
+  if (!state.quote) {
+    return null;
   }
 
-  return state.rates[code];
+  return (state.quote.bid + state.quote.ask) / 2;
 }
 
 function renderConversion() {
@@ -144,78 +69,107 @@ function renderConversion() {
   state.from = elements.fromCurrency.value;
   state.to = elements.toCurrency.value;
 
-  const fromRate = getRate(state.from);
-  const toRate = getRate(state.to);
-
-  if (!fromRate || !toRate) {
-    elements.conversionResult.textContent = "Unavailable";
-    elements.conversionDetail.textContent = "The selected pair is not available from the current base.";
+  const mid = getMidPrice();
+  if (!mid) {
+    elements.conversionResult.textContent = "Loading...";
+    elements.conversionDetail.textContent = "Waiting for the latest USD/THB quote.";
     return;
   }
 
-  const converted = amount * (toRate / fromRate);
-  const unitRate = toRate / fromRate;
+  const rate = state.from === "USD" ? mid : 1 / mid;
+  const converted = amount * rate;
 
   elements.conversionResult.textContent = `${formatNumber(converted, 2)} ${state.to}`;
-  elements.conversionDetail.textContent = `1 ${state.from} = ${formatNumber(unitRate, 6)} ${state.to}`;
+  elements.conversionDetail.textContent = `Using midpoint ${formatNumber(mid, 5)} THB per USD`;
 }
 
 function renderCards() {
-  const cards = FEATURED_CURRENCIES.filter((code) => code !== state.base)
-    .slice(0, 5)
-    .map((code) => {
-      const rate = getRate(code);
-      if (!rate) {
-        return "";
-      }
+  if (!state.quote) {
+    elements.rateCards.innerHTML = '<p class="empty-state">Waiting for the first live quote.</p>';
+    return;
+  }
 
-      return `
-        <article class="rate-card">
-          <span class="rate-pair">${state.base} / ${code}</span>
-          <strong class="rate-value">${formatNumber(rate, 4)}</strong>
-        </article>
-      `;
-    })
-    .join("");
+  const spread = state.quote.ask - state.quote.bid;
+  const mid = getMidPrice();
 
-  elements.rateCards.innerHTML = cards || '<p class="empty-state">No featured rates available.</p>';
+  elements.rateCards.innerHTML = `
+    <article class="rate-card">
+      <span class="rate-pair">${PAIR} Bid</span>
+      <strong class="rate-value">${formatNumber(state.quote.bid, 3)}</strong>
+    </article>
+    <article class="rate-card">
+      <span class="rate-pair">${PAIR} Ask</span>
+      <strong class="rate-value">${formatNumber(state.quote.ask, 3)}</strong>
+    </article>
+    <article class="rate-card">
+      <span class="rate-pair">Mid Price</span>
+      <strong class="rate-value">${formatNumber(mid, 3)}</strong>
+    </article>
+    <article class="rate-card">
+      <span class="rate-pair">Spread</span>
+      <strong class="rate-value">${formatNumber(spread, 3)}</strong>
+    </article>
+  `;
 }
 
-function renderTable() {
-  const query = elements.searchInput.value.trim().toLowerCase();
-  const rows = Object.entries(state.currencies)
-    .filter(([code, name]) => {
-      if (!query) {
-        return true;
-      }
+function renderMetrics() {
+  if (!state.quote) {
+    elements.metricsTableBody.innerHTML = `
+      <tr>
+        <td colspan="2" class="empty-state">Waiting for the first live quote.</td>
+      </tr>
+    `;
+    return;
+  }
 
-      return code.toLowerCase().includes(query) || name.toLowerCase().includes(query);
-    })
-    .sort(([codeA], [codeB]) => codeA.localeCompare(codeB))
-    .map(([code, name]) => {
-      const rate = getRate(code);
-      return `
+  const rows = [
+    ["Pair", PAIR],
+    ["Timestamp", formatDateTime(state.quote.timestamp)],
+    ["Opening Bid", formatNumber(state.quote.openingBid, 3)],
+    ["Opening Ask", formatNumber(state.quote.openingAsk, 3)],
+    ["Closing Bid", formatNumber(state.quote.closingBid, 3)],
+    ["Closing Ask", formatNumber(state.quote.closingAsk, 3)],
+    ["Session High", formatNumber(state.quote.high, 3)],
+    ["Session Low", formatNumber(state.quote.low, 3)],
+    ["Pip Location", String(state.quote.pipLocation)],
+    ["Extra Precision", String(state.quote.extraPrecision)],
+    ["Checked At", formatDateTime(state.lastCheckedAt)],
+  ];
+
+  elements.metricsTableBody.innerHTML = rows
+    .map(
+      ([label, value]) => `
         <tr>
-          <td>${code}</td>
-          <td>${name}</td>
-          <td>${rate ? formatNumber(rate, 6) : "1.000000"}</td>
+          <td>${label}</td>
+          <td>${value}</td>
         </tr>
-      `;
-    })
+      `
+    )
     .join("");
+}
 
-  elements.ratesTableBody.innerHTML = rows || `
-    <tr>
-      <td colspan="3" class="empty-state">No currencies match your search.</td>
-    </tr>
-  `;
+function renderUpdatedAt() {
+  elements.updatedText.textContent = state.quote
+    ? formatDateTime(state.quote.timestamp)
+    : "Waiting for data";
 }
 
 function renderAll() {
   renderUpdatedAt();
   renderCards();
-  renderTable();
+  renderMetrics();
   renderConversion();
+}
+
+async function loadQuote() {
+  setStatus("Refreshing quote...");
+  const data = await fetchQuote();
+
+  state.quote = data;
+  state.lastCheckedAt = new Date().toISOString();
+
+  renderAll();
+  setStatus("Live quote loaded");
 }
 
 function swapCurrencies() {
@@ -226,47 +180,40 @@ function swapCurrencies() {
 }
 
 function bindEvents() {
-  elements.baseCurrency.addEventListener("change", async (event) => {
-    state.base = event.target.value;
-    await loadRates();
-  });
-
+  elements.amountInput.addEventListener("input", renderConversion);
   elements.fromCurrency.addEventListener("change", renderConversion);
   elements.toCurrency.addEventListener("change", renderConversion);
-  elements.amountInput.addEventListener("input", renderConversion);
-  elements.searchInput.addEventListener("input", renderTable);
   elements.swapButton.addEventListener("click", swapCurrencies);
   elements.refreshButton.addEventListener("click", () => {
-    loadRates().catch(handleError);
+    loadQuote().catch(handleError);
   });
+}
+
+function handleError(error) {
+  console.error(error);
+  setStatus("Unable to load quote");
+  elements.updatedText.textContent = "Check connection";
+  elements.conversionResult.textContent = "Error";
+  elements.conversionDetail.textContent = "The OANDA proxy could not be reached.";
+  elements.rateCards.innerHTML = '<p class="empty-state">Could not load the live quote.</p>';
+  elements.metricsTableBody.innerHTML = `
+    <tr>
+      <td colspan="2" class="empty-state">Unable to load the live quote right now.</td>
+    </tr>
+  `;
 }
 
 async function init() {
   try {
     bindEvents();
-    await loadRates();
+    await loadQuote();
 
     window.setInterval(() => {
-      loadRates().catch(handleError);
-    }, 30_000);
+      loadQuote().catch(handleError);
+    }, POLL_INTERVAL_MS);
   } catch (error) {
     handleError(error);
   }
-}
-
-function handleError(error) {
-  console.error(error);
-  setStatus("Unable to load rates");
-  elements.updatedText.textContent = "Check connection";
-  elements.nextUpdatedText.textContent = "Check connection";
-  elements.conversionResult.textContent = "Error";
-  elements.conversionDetail.textContent = "The API could not be reached right now.";
-  elements.rateCards.innerHTML = '<p class="empty-state">Could not load featured rates.</p>';
-  elements.ratesTableBody.innerHTML = `
-    <tr>
-      <td colspan="3" class="empty-state">Unable to load exchange rates right now.</td>
-    </tr>
-  `;
 }
 
 init();

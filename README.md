@@ -1,33 +1,34 @@
 # QuoteRate
 
-QuoteRate is a static website that shows the latest free exchange rates and includes a simple currency converter.
+QuoteRate is a lightweight website for tracking live `USD/THB` using an OANDA-backed local proxy and a simple converter.
 
 ## What it uses
 
 - Plain `HTML`, `CSS`, and `JavaScript`
-- [Frankfurter](https://www.frankfurter.app/docs/) for free exchange-rate data with no API key
+- A tiny built-in Python server in `server.py`
+- OANDA live rates page and stream endpoint for `USD/THB`
 
 ## Important note
 
-This project uses a free public API. That means the rates are the latest reference rates made available by the provider, not broker-grade tick-by-tick forex prices.
+This version uses OANDA-backed `USD/THB` data fetched server-side by the local Python app. The browser does not call OANDA directly.
 
 ## Run locally
 
 From this folder:
 
 ```powershell
-python -m http.server 8000
+python server.py
 ```
 
 Then open:
 
 ```text
-http://localhost:8000
+http://127.0.0.1:8000
 ```
 
 ## Deploy to GitHub Pages
 
-This project is ready for GitHub Pages because it is a fully static site.
+The original static version worked on GitHub Pages, but the OANDA-backed version does not. OANDA rejects cross-origin browser requests from a static host, so this live version needs a backend-capable host.
 
 ### 1. Create a GitHub repository
 
@@ -48,35 +49,15 @@ git push -u origin main
 
 Replace `YOUR-USERNAME` with your GitHub username.
 
-### 3. Enable GitHub Pages
-
-On GitHub:
-
-1. Open the repository.
-2. Go to `Settings`.
-3. Open `Pages`.
-4. Under `Build and deployment`, choose:
-   - `Source`: `Deploy from a branch`
-   - `Branch`: `main`
-   - `Folder`: `/ (root)`
-5. Save.
-
-### 4. Open the live site
-
-For a project repository named `QuoteRate`, the URL will usually be:
-
-```text
-https://YOUR-USERNAME.github.io/QuoteRate/
-```
-
 ### Notes
 
-- The `.nojekyll` file is included so GitHub Pages serves the site exactly as a plain static project.
-- Because this app uses a browser request to Frankfurter, GitHub Pages does not need any server-side code.
-- GitHub Pages deployment can take a minute or two after you push or update settings.
+- `server.py` serves both the frontend files and `/api/usd-thb`.
+- The frontend polls `/api/usd-thb` every 30 seconds and also refreshes on request.
+- Because the data is fetched server-side, deploy this version on a platform that can run Python rather than GitHub Pages.
 
 ## Files
 
 - `index.html` for the page structure
 - `styles.css` for the visual design
-- `script.js` for fetching rates and powering the converter
+- `script.js` for polling the local quote endpoint and powering the converter
+- `server.py` for serving the site and decoding OANDA’s live `USD/THB` stream
