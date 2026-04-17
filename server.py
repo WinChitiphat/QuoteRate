@@ -4,6 +4,7 @@ import base64
 import json
 import os
 import socket
+from datetime import datetime, timezone
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
@@ -15,6 +16,8 @@ from urllib.request import Request, urlopen
 HOST = "0.0.0.0"
 PORT = int(os.environ.get("PORT", "8000"))
 STREAM_URL_TEMPLATE = "https://labs-api.oanda.com/v2/rates?instruments={instrument}&division=MKTD"
+BITKUB_DEPTH_URL = "https://api.bitkub.com/api/market/depth?sym=THB_USDT&lmt=1"
+COINBASE_BOOK_URL = "https://api.exchange.coinbase.com/products/USDT-USD/book?level=1"
 BASE_DIR = Path(__file__).resolve().parent
 
 
@@ -80,21 +83,84 @@ def fetch_oanda_quote(instrument: str) -> dict[str, Any]:
     raise RuntimeError("No OANDA rate event received")
 
 
+def fetch_json(url: str, headers: dict[str, str] | None = None) -> dict[str, Any]:
+    request = Request(
+        url,
+        headers={
+            "Accept": "application/json",
+            "User-Agent": "Mozilla/5.0 (compatible; QuoteRate/1.0)",
+            "Origin": "https://www.google.com",
+            **(headers or {}),
+        },
+    )
+
+    with urlopen(request, timeout=10) as response:
+        return json.load(response)
+
+
+def iso_now() -> str:
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def fetch_bitkub_usdt_thb_quote() -> dict[str, Any]:
+    payload = fetch_json(BITKUB_DEPTH_URL)
+    result = payload.get("result")
+    book = result if isinstance(result, dict) else payload
+    bids = book.get("bids", [])
+    asks = book.get("asks", [])
+
+    if not bids or not asks:
+        raise RuntimeError("Bitkub order book is missing bids or asks")
+
+    return {
+        "symbol": "USDT_THB",
+        "bid": float(bids[0][0]),
+        "ask": float(asks[0][0]),
+        "timestamp": iso_now(),
+        "source": "Bitkub",
+    }
+
+
+def fetch_coinbase_usdt_usd_quote() -> dict[str, Any]:
+    payload = fetch_json(COINBASE_BOOK_URL)
+    bids = payload.get("bids", [])
+    asks = payload.get("asks", [])
+
+    if not bids or not asks:
+        raise RuntimeError("Coinbase order book is missing bids or asks")
+
+    return {
+        "symbol": "USDT-USD",
+        "bid": float(bids[0][0]),
+        "ask": float(asks[0][0]),
+        "timestamp": payload.get("time") or iso_now(),
+        "source": "Coinbase",
+    }
+
+
 def build_dashboard_payload() -> dict[str, Any]:
     usd_thb = fetch_oanda_quote("USD_THB")
     eur_usd = fetch_oanda_quote("EUR_USD")
+    usdt_thb = fetch_bitkub_usdt_thb_quote()
+    usdt_usd = fetch_coinbase_usdt_usd_quote()
 
     usd_thb_mid = (usd_thb["bid"] + usd_thb["ask"]) / 2
     eur_usd_mid = (eur_usd["bid"] + eur_usd["ask"]) / 2
+    usdt_thb_mid = (usdt_thb["bid"] + usdt_thb["ask"]) / 2
+    usdt_usd_mid = (usdt_usd["bid"] + usdt_usd["ask"]) / 2
     eur_thb_mid = eur_usd_mid * usd_thb_mid
 
     return {
         "usd_thb": usd_thb,
         "eur_usd": eur_usd,
+        "usdt_thb": usdt_thb,
+        "usdt_usd": usdt_usd,
         "derived": {
             "eur_thb_mid": round(eur_thb_mid, 6),
             "usd_thb_fee_1pct": round(usd_thb_mid * 1.01, 6),
             "usd_thb_fee_3pct": round(usd_thb_mid * 1.03, 6),
+            "usdt_thb_mid": round(usdt_thb_mid, 6),
+            "usdt_usd_mid": round(usdt_usd_mid, 6),
         },
     }
 
@@ -131,7 +197,17 @@ class QuoteRateHandler(SimpleHTTPRequestHandler):
         try:
             payload = build_dashboard_payload()
             self.send_json(payload)
-        except (TimeoutError, socket.timeout, URLError, RuntimeError, json.JSONDecodeError, base64.binascii.Error, KeyError) as error:
+        except (
+            TimeoutError,
+            socket.timeout,
+            URLError,
+            RuntimeError,
+            json.JSONDecodeError,
+            base64.binascii.Error,
+            KeyError,
+            IndexError,
+            ValueError,
+        ) as error:
             self.send_json({"error": str(error)}, status=502)
 
     def send_json(self, payload: dict[str, Any], status: int = 200) -> None:

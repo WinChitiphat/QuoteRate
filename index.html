@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Instrument+Serif:ital@0;1&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="styles.css" />
@@ -24,77 +24,67 @@
             <span class="brand-mark">QR</span>
             <div>
               <p class="eyebrow">QuoteRate</p>
-              <h1>Live USD/THB with a clearer edge.</h1>
+              <h1>Live Exchange Rate</h1>
             </div>
           </div>
           <button id="refreshButton" class="ghost-button" type="button">Refresh Now</button>
         </nav>
 
-        <div class="hero-grid">
-          <section class="hero-copy panel">
-            <p class="lede">
-              Watch USD/THB bid and ask prices through a lightweight Python relay, with automatic checks every 30 seconds and an instant midpoint converter.
-            </p>
-            <div class="status-strip">
-              <div class="status-tile">
-                <span class="meta-label">Status</span>
-                <strong id="statusText">Connecting...</strong>
-              </div>
-              <div class="status-tile">
-                <span class="meta-label">Last Tick</span>
-                <strong id="updatedText">Checking...</strong>
-              </div>
-              <div class="status-tile">
-                <span class="meta-label">Source</span>
-                <strong>OANDA via proxy</strong>
-              </div>
-            </div>
-          </section>
-
-          <section class="hero-spotlight panel">
-            <p class="eyebrow">Live Mid Price</p>
+        <div class="hero-grid hero-grid-top">
+          <section class="hero-spotlight panel hero-spotlight-spread">
             <div class="quote-stack">
               <div class="quote-row">
                 <span class="pair-badge">USD/THB</span>
-                <span id="marketPulse" class="pulse-chip">Waiting</span>
+                <span class="pulse-chip">Live on OANDA</span>
               </div>
-              <h2 id="heroPrice" class="hero-price">--.--</h2>
-              <p id="heroDetail" class="hero-detail">Waiting for the first quote.</p>
+              <h2 id="heroSpreadUsdPrice" class="hero-price">--.--</h2>
+              <p id="heroSpreadUsdDetail" class="hero-detail">Waiting for the first quote.</p>
             </div>
-            <div class="mini-stats">
+            <div class="mini-stats mini-stats-quad">
               <div class="mini-stat">
-                <span class="meta-label">Bid</span>
-                <strong id="heroBid">--.--</strong>
-              </div>
-              <div class="mini-stat">
-                <span class="meta-label">Ask</span>
-                <strong id="heroAsk">--.--</strong>
+                <span class="meta-label">Mid Rate</span>
+                <strong id="heroSpreadUsdBase">--.--</strong>
               </div>
               <div class="mini-stat">
                 <span class="meta-label">Spread</span>
-                <strong id="heroSpread">--.--</strong>
+                <strong id="heroSpreadUsdAdjusted">--.--</strong>
+              </div>
+              <div class="mini-stat">
+                <span class="meta-label">Bid</span>
+                <strong id="heroSpreadUsdBid">--.--</strong>
+              </div>
+              <div class="mini-stat">
+                <span class="meta-label">Ask</span>
+                <strong id="heroSpreadUsdAsk">--.--</strong>
               </div>
             </div>
           </section>
 
-          <section class="hero-spotlight panel hero-spotlight-alt">
-            <p class="eyebrow">Live Mid Price</p>
+          <section class="hero-spotlight panel hero-spotlight-alt hero-spotlight-spread">
             <div class="quote-stack">
               <div class="quote-row">
                 <span class="pair-badge">EUR/THB</span>
-                <span id="eurReferenceTag" class="pulse-chip">Derived reference</span>
+                <span class="pulse-chip">Live on OANDA</span>
               </div>
-              <h2 id="heroEurPrice" class="hero-price hero-price-compact">--.--</h2>
-              <p id="heroEurDetail" class="hero-detail">Waiting for the first quote.</p>
+              <h2 id="heroSpreadEurPrice" class="hero-price">--.--</h2>
+              <p id="heroSpreadEurDetail" class="hero-detail">Waiting for the first quote.</p>
             </div>
-            <div class="mini-stats mini-stats-dual">
+            <div class="mini-stats mini-stats-quad">
               <div class="mini-stat">
-                <span class="meta-label">EUR/USD Mid</span>
-                <strong id="heroEurUsd">--.--</strong>
+                <span class="meta-label">Mid Rate</span>
+                <strong id="heroSpreadEurBase">--.--</strong>
               </div>
               <div class="mini-stat">
-                <span class="meta-label">EUR/THB</span>
-                <strong id="heroEurThb">--.--</strong>
+                <span class="meta-label">Spread</span>
+                <strong id="heroSpreadEurAdjusted">--.--</strong>
+              </div>
+              <div class="mini-stat">
+                <span class="meta-label">Bid</span>
+                <strong id="heroSpreadEurBid">--.--</strong>
+              </div>
+              <div class="mini-stat">
+                <span class="meta-label">Ask</span>
+                <strong id="heroSpreadEurAsk">--.--</strong>
               </div>
             </div>
           </section>
@@ -105,7 +95,7 @@
         <section class="panel converter-panel">
           <div class="panel-heading">
             <p class="eyebrow">Quick Converter</p>
-            <h2>Mid-price calculator</h2>
+            <h2>Calculator</h2>
           </div>
 
           <form id="converterForm" class="converter-form">
@@ -119,6 +109,8 @@
                 From
                 <select id="fromCurrency">
                   <option value="USD">USD - US Dollar</option>
+                  <option value="EUR">EUR - Euro</option>
+                  <option value="USDT">USDT - Tether</option>
                   <option value="THB">THB - Thai Baht</option>
                 </select>
               </label>
@@ -132,6 +124,8 @@
                 <select id="toCurrency">
                   <option value="THB">THB - Thai Baht</option>
                   <option value="USD">USD - US Dollar</option>
+                  <option value="EUR">EUR - Euro</option>
+                  <option value="USDT">USDT - Tether</option>
                 </select>
               </label>
             </div>
@@ -173,8 +167,25 @@
 
         <section class="panel source-panel">
           <div class="eyebrow-pill">OANDA-backed live proxy</div>
+          <p class="lede lede-compact">
+            Watch USD/THB, USDT/THB, and USDT/USD pricing through a lightweight Python relay, with automatic checks every 1 minute and an instant midpoint converter.
+          </p>
+          <div class="status-strip source-status-strip">
+            <div class="status-tile">
+              <span class="meta-label">Status</span>
+              <strong id="statusText">Connecting...</strong>
+            </div>
+            <div class="status-tile">
+              <span class="meta-label">Last Tick</span>
+              <strong id="updatedText">Checking...</strong>
+            </div>
+            <div class="status-tile">
+              <span class="meta-label">Source</span>
+              <strong>OANDA, Bitkub, Coinbase</strong>
+            </div>
+          </div>
           <p class="note">
-            OANDA's live stream is fetched server-side because the browser cannot call it directly from a static host. This dashboard reads the latest decoded USD/THB event from your same-origin API.
+            OANDA, Bitkub, and Coinbase are fetched server-side so the browser reads one same-origin dashboard payload with the latest bid, ask, and derived rates.
           </p>
         </section>
       </main>

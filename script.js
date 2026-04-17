@@ -1,30 +1,29 @@
 const API_URL = "/api/dashboard";
 const PAIR = "USD/THB";
-const POLL_INTERVAL_MS = 30_000;
-
+const POLL_INTERVAL_MS = 60_000;
 const state = {
   amount: 100,
   from: "USD",
   to: "THB",
   dashboard: null,
-  lastCheckedAt: null,
 };
 
 const elements = {
   amountInput: document.getElementById("amountInput"),
   fromCurrency: document.getElementById("fromCurrency"),
   toCurrency: document.getElementById("toCurrency"),
-  heroPrice: document.getElementById("heroPrice"),
-  heroDetail: document.getElementById("heroDetail"),
-  heroBid: document.getElementById("heroBid"),
-  heroAsk: document.getElementById("heroAsk"),
-  heroSpread: document.getElementById("heroSpread"),
-  heroEurThb: document.getElementById("heroEurThb"),
-  heroEurPrice: document.getElementById("heroEurPrice"),
-  heroEurDetail: document.getElementById("heroEurDetail"),
-  heroEurUsd: document.getElementById("heroEurUsd"),
-  eurReferenceTag: document.getElementById("eurReferenceTag"),
-  marketPulse: document.getElementById("marketPulse"),
+  heroSpreadUsdPrice: document.getElementById("heroSpreadUsdPrice"),
+  heroSpreadUsdDetail: document.getElementById("heroSpreadUsdDetail"),
+  heroSpreadUsdBase: document.getElementById("heroSpreadUsdBase"),
+  heroSpreadUsdAdjusted: document.getElementById("heroSpreadUsdAdjusted"),
+  heroSpreadUsdBid: document.getElementById("heroSpreadUsdBid"),
+  heroSpreadUsdAsk: document.getElementById("heroSpreadUsdAsk"),
+  heroSpreadEurPrice: document.getElementById("heroSpreadEurPrice"),
+  heroSpreadEurDetail: document.getElementById("heroSpreadEurDetail"),
+  heroSpreadEurBase: document.getElementById("heroSpreadEurBase"),
+  heroSpreadEurAdjusted: document.getElementById("heroSpreadEurAdjusted"),
+  heroSpreadEurBid: document.getElementById("heroSpreadEurBid"),
+  heroSpreadEurAsk: document.getElementById("heroSpreadEurAsk"),
   rateCards: document.getElementById("rateCards"),
   metricsTableBody: document.getElementById("metricsTableBody"),
   conversionResult: document.getElementById("conversionResult"),
@@ -33,6 +32,9 @@ const elements = {
   updatedText: document.getElementById("updatedText"),
   refreshButton: document.getElementById("refreshButton"),
   swapButton: document.getElementById("swapButton"),
+  heroSpreadNumbers: document.querySelectorAll(
+    ".hero-spotlight-spread .hero-price, .hero-spotlight-spread .mini-stat strong"
+  ),
 };
 
 async function fetchQuote() {
@@ -49,7 +51,7 @@ function setStatus(message) {
 }
 
 function formatNumber(value, maximumFractionDigits = 4) {
-  return new Intl.NumberFormat(undefined, {
+  return new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 0,
     maximumFractionDigits,
   }).format(value);
@@ -70,11 +72,32 @@ function getUsdThbQuote() {
   return state.dashboard?.usd_thb ?? null;
 }
 
+function getEurUsdQuote() {
+  return state.dashboard?.eur_usd ?? null;
+}
+
+function getUsdtThbQuote() {
+  return state.dashboard?.usdt_thb ?? null;
+}
+
+function getUsdtUsdQuote() {
+  return state.dashboard?.usdt_usd ?? null;
+}
+
 function getDerivedRates() {
   return state.dashboard?.derived ?? null;
 }
 
-function getMidPrice() {
+function getEurUsdMid() {
+  const quote = getEurUsdQuote();
+  if (!quote) {
+    return null;
+  }
+
+  return (quote.bid + quote.ask) / 2;
+}
+
+function getUsdMid() {
   const quote = getUsdThbQuote();
   if (!quote) {
     return null;
@@ -83,13 +106,88 @@ function getMidPrice() {
   return (quote.bid + quote.ask) / 2;
 }
 
+function getEurDerivedQuote() {
+  const usdThb = getUsdThbQuote();
+  const eurUsd = getEurUsdQuote();
+  const derived = getDerivedRates();
+
+  if (!usdThb || !eurUsd || !derived) {
+    return null;
+  }
+
+  const bid = eurUsd.bid * usdThb.bid;
+  const ask = eurUsd.ask * usdThb.ask;
+  const spread = ask - bid;
+  const timestamp =
+    new Date(eurUsd.timestamp).getTime() > new Date(usdThb.timestamp).getTime()
+      ? eurUsd.timestamp
+      : usdThb.timestamp;
+
+  return {
+    bid,
+    ask,
+    spread,
+    mid: derived.eur_thb_mid,
+    timestamp,
+  };
+}
+
+function getConversionRate(from, to) {
+  const usdMid = getUsdMid();
+  const eurMid = getEurDerivedQuote()?.mid ?? null;
+  const eurUsdMid = getEurUsdMid();
+  const usdtThbMid = getDerivedRates()?.usdt_thb_mid ?? null;
+  const usdtUsdMid = getDerivedRates()?.usdt_usd_mid ?? null;
+  const eurUsdtMid = eurUsdMid && usdtUsdMid ? eurUsdMid / usdtUsdMid : null;
+  const usdUsdtMid = usdtUsdMid ? 1 / usdtUsdMid : null;
+
+  if (from === to) {
+    return { rate: 1, label: `1 ${to} per ${from}` };
+  }
+
+  const rates = {
+    "USD/THB": usdMid,
+    "THB/USD": usdMid ? 1 / usdMid : null,
+    "EUR/THB": eurMid,
+    "THB/EUR": eurMid ? 1 / eurMid : null,
+    "EUR/USD": eurUsdMid,
+    "USD/EUR": eurUsdMid ? 1 / eurUsdMid : null,
+    "USDT/THB": usdtThbMid,
+    "THB/USDT": usdtThbMid ? 1 / usdtThbMid : null,
+    "USDT/USD": usdtUsdMid,
+    "USD/USDT": usdUsdtMid,
+    "EUR/USDT": eurUsdtMid,
+    "USDT/EUR": eurUsdtMid ? 1 / eurUsdtMid : null,
+  };
+
+  const pair = `${from}/${to}`;
+  const rate = rates[pair];
+
+  if (!rate) {
+    return null;
+  }
+
+  return {
+    rate,
+    label: `${to} per ${from}`,
+  };
+}
+
+function animateHeroSpreadCards() {
+  elements.heroSpreadNumbers.forEach((element) => {
+    element.classList.remove("is-refreshing");
+    void element.offsetWidth;
+    element.classList.add("is-refreshing");
+  });
+}
+
 function getMovementDirection() {
   const quote = getUsdThbQuote();
   if (!quote) {
     return "flat";
   }
 
-  const currentMid = getMidPrice();
+  const currentMid = getUsdMid();
   const closingMid = (quote.closingBid + quote.closingAsk) / 2;
 
   if (currentMid > closingMid) {
@@ -103,47 +201,55 @@ function getMovementDirection() {
   return "flat";
 }
 
-function renderHeroQuote() {
-  const quote = getUsdThbQuote();
-  const derived = getDerivedRates();
+function resetHeroCards() {
+  const placeholders = [
+    elements.heroSpreadUsdPrice,
+    elements.heroSpreadUsdBase,
+    elements.heroSpreadUsdAdjusted,
+    elements.heroSpreadUsdBid,
+    elements.heroSpreadUsdAsk,
+    elements.heroSpreadEurPrice,
+    elements.heroSpreadEurBase,
+    elements.heroSpreadEurAdjusted,
+    elements.heroSpreadEurBid,
+    elements.heroSpreadEurAsk,
+  ];
 
-  if (!quote || !derived) {
-    elements.heroPrice.textContent = "--.--";
-    elements.heroDetail.textContent = "Waiting for the first quote.";
-    elements.heroBid.textContent = "--.--";
-    elements.heroAsk.textContent = "--.--";
-    elements.heroSpread.textContent = "--.--";
-    elements.heroEurThb.textContent = "--.--";
-    elements.heroEurPrice.textContent = "--.--";
-    elements.heroEurDetail.textContent = "Waiting for the first quote.";
-    elements.heroEurUsd.textContent = "--.--";
-    elements.eurReferenceTag.className = "pulse-chip";
-    elements.marketPulse.textContent = "Waiting";
-    elements.marketPulse.className = "pulse-chip";
+  placeholders.forEach((element) => {
+    element.textContent = "--.--";
+  });
+
+  elements.heroSpreadUsdDetail.textContent = "Waiting for the first quote.";
+  elements.heroSpreadEurDetail.textContent = "Waiting for the first quote.";
+}
+
+function renderHeroQuote() {
+  const usdQuote = getUsdThbQuote();
+  const eurQuote = getEurDerivedQuote();
+
+  if (!usdQuote || !eurQuote) {
+    resetHeroCards();
     return;
   }
 
-  const mid = getMidPrice();
-  const spread = quote.ask - quote.bid;
-  const direction = getMovementDirection();
-  const movementLabels = {
-    up: "Trading above close",
-    down: "Trading below close",
-    flat: "Near prior close",
-  };
+  const usdMid = getUsdMid();
+  const usdSpread = usdQuote.ask - usdQuote.bid;
 
-  elements.heroPrice.textContent = formatNumber(mid, 3);
-  elements.heroDetail.textContent = `Last server check ${formatDateTime(state.lastCheckedAt)}. Quote timestamp ${formatDateTime(quote.timestamp)}.`;
-  elements.heroBid.textContent = formatNumber(quote.bid, 3);
-  elements.heroAsk.textContent = formatNumber(quote.ask, 3);
-  elements.heroSpread.textContent = formatNumber(spread, 3);
-  elements.heroEurThb.textContent = formatNumber(derived.eur_thb_mid, 3);
-  elements.heroEurPrice.textContent = formatNumber(derived.eur_thb_mid, 3);
-  elements.heroEurUsd.textContent = formatNumber((state.dashboard.eur_usd.bid + state.dashboard.eur_usd.ask) / 2, 5);
-  elements.heroEurDetail.textContent = "Derived from the live EUR/USD midpoint multiplied by the live USD/THB midpoint.";
-  elements.eurReferenceTag.className = "pulse-chip";
-  elements.marketPulse.textContent = movementLabels[direction];
-  elements.marketPulse.className = `pulse-chip${direction === "flat" ? "" : ` is-${direction}`}`;
+  elements.heroSpreadUsdPrice.textContent = formatNumber(usdMid, 3);
+  elements.heroSpreadUsdDetail.textContent = `Quote timestamp ${formatDateTime(usdQuote.timestamp)}.`;
+  elements.heroSpreadUsdBase.textContent = formatNumber(usdMid, 3);
+  elements.heroSpreadUsdAdjusted.textContent = formatNumber(usdSpread, 3);
+  elements.heroSpreadUsdBid.textContent = formatNumber(usdQuote.bid, 3);
+  elements.heroSpreadUsdAsk.textContent = formatNumber(usdQuote.ask, 3);
+
+  elements.heroSpreadEurPrice.textContent = formatNumber(eurQuote.mid, 3);
+  elements.heroSpreadEurDetail.textContent = `Quote timestamp ${formatDateTime(eurQuote.timestamp)}.`;
+  elements.heroSpreadEurBase.textContent = formatNumber(eurQuote.mid, 3);
+  elements.heroSpreadEurAdjusted.textContent = formatNumber(eurQuote.spread, 3);
+  elements.heroSpreadEurBid.textContent = formatNumber(eurQuote.bid, 3);
+  elements.heroSpreadEurAsk.textContent = formatNumber(eurQuote.ask, 3);
+
+  animateHeroSpreadCards();
 }
 
 function renderConversion() {
@@ -152,31 +258,32 @@ function renderConversion() {
   state.from = elements.fromCurrency.value;
   state.to = elements.toCurrency.value;
 
-  const mid = getMidPrice();
-  if (!mid) {
+  const conversion = getConversionRate(state.from, state.to);
+  if (!conversion) {
     elements.conversionResult.textContent = "Loading...";
-    elements.conversionDetail.textContent = "Waiting for the latest USD/THB quote.";
+    elements.conversionDetail.textContent = "Waiting for the latest quote for this pair.";
     return;
   }
 
-  const rate = state.from === "USD" ? mid : 1 / mid;
-  const converted = amount * rate;
+  const converted = amount * conversion.rate;
 
   elements.conversionResult.textContent = `${formatNumber(converted, 2)} ${state.to}`;
-  elements.conversionDetail.textContent = `Using midpoint ${formatNumber(mid, 5)} THB per USD`;
+  elements.conversionDetail.textContent = `Using midpoint ${formatNumber(conversion.rate, 5)} ${conversion.label}`;
 }
 
 function renderCards() {
   const quote = getUsdThbQuote();
+  const usdtThb = getUsdtThbQuote();
+  const usdtUsd = getUsdtUsdQuote();
   const derived = getDerivedRates();
 
-  if (!quote || !derived) {
+  if (!quote || !usdtThb || !usdtUsd || !derived) {
     elements.rateCards.innerHTML = '<p class="empty-state">Waiting for the first live quote.</p>';
     return;
   }
 
   const spread = quote.ask - quote.bid;
-  const mid = getMidPrice();
+  const mid = getUsdMid();
   const closingMid = (quote.closingBid + quote.closingAsk) / 2;
   const delta = mid - closingMid;
 
@@ -202,23 +309,30 @@ function renderCards() {
       <span class="rate-subvalue">Derived from EUR/USD and USD/THB</span>
     </article>
     <article class="rate-card">
-      <span class="rate-pair">USD/THB + 1% fee</span>
-      <strong class="rate-value">${formatNumber(derived.usd_thb_fee_1pct, 3)}</strong>
-      <span class="rate-subvalue">Typical service markup scenario</span>
+      <span class="rate-pair">USDT/THB Bid</span>
+      <strong class="rate-value">${formatNumber(usdtThb.bid, 3)}</strong>
+      <span class="rate-subvalue">Best bid from Bitkub</span>
     </article>
     <article class="rate-card">
-      <span class="rate-pair">USD/THB + 3% fee</span>
-      <strong class="rate-value">${formatNumber(derived.usd_thb_fee_3pct, 3)}</strong>
-      <span class="rate-subvalue">Heavier card or kiosk markup</span>
+      <span class="rate-pair">USDT/THB Ask</span>
+      <strong class="rate-value">${formatNumber(usdtThb.ask, 3)}</strong>
+      <span class="rate-subvalue">Best ask from Bitkub</span>
+    </article>
+    <article class="rate-card">
+      <span class="rate-pair">USDT/USD</span>
+      <strong class="rate-value">${formatNumber(derived.usdt_usd_mid, 5)}</strong>
+      <span class="rate-subvalue">Midpoint from Coinbase book</span>
     </article>
   `;
 }
 
 function renderMetrics() {
   const quote = getUsdThbQuote();
+  const usdtThb = getUsdtThbQuote();
+  const usdtUsd = getUsdtUsdQuote();
   const derived = getDerivedRates();
 
-  if (!quote || !derived) {
+  if (!quote || !usdtThb || !usdtUsd || !derived) {
     elements.metricsTableBody.innerHTML = `
       <tr>
         <td colspan="2" class="empty-state">Waiting for the first live quote.</td>
@@ -238,7 +352,11 @@ function renderMetrics() {
     ["Session Low", formatNumber(quote.low, 3)],
     ["EUR/USD Mid", formatNumber((state.dashboard.eur_usd.bid + state.dashboard.eur_usd.ask) / 2, 5)],
     ["EUR/THB Mid", formatNumber(derived.eur_thb_mid, 3)],
-    ["Checked At", formatDateTime(state.lastCheckedAt)],
+    ["USDT/THB Bid (Bitkub)", formatNumber(usdtThb.bid, 3)],
+    ["USDT/THB Ask (Bitkub)", formatNumber(usdtThb.ask, 3)],
+    ["USDT/USD Bid (Coinbase)", formatNumber(usdtUsd.bid, 5)],
+    ["USDT/USD Ask (Coinbase)", formatNumber(usdtUsd.ask, 5)],
+    ["USDT/USD Mid (Coinbase)", formatNumber(derived.usdt_usd_mid, 5)],
   ];
 
   elements.metricsTableBody.innerHTML = rows
@@ -271,7 +389,6 @@ async function loadQuote() {
   const data = await fetchQuote();
 
   state.dashboard = data;
-  state.lastCheckedAt = new Date().toISOString();
 
   renderAll();
   setStatus("Live quote loaded");
@@ -298,7 +415,7 @@ function handleError(error) {
   console.error(error);
   setStatus("Unable to load quote");
   elements.updatedText.textContent = "Check connection";
-  renderHeroQuote();
+  resetHeroCards();
   elements.conversionResult.textContent = "Error";
   elements.conversionDetail.textContent = "The OANDA proxy could not be reached.";
   elements.rateCards.innerHTML = '<p class="empty-state">Could not load the live quote.</p>';

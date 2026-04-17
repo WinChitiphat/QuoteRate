@@ -23,7 +23,7 @@
 body {
   margin: 0;
   min-height: 100vh;
-  font-family: "Space Grotesk", sans-serif;
+  font-family: "Sarabun", sans-serif;
   color: var(--text);
   background:
     radial-gradient(circle at top left, rgba(243, 212, 188, 0.84), transparent 24%),
@@ -55,6 +55,7 @@ body::before {
 
 .topbar,
 .hero-grid,
+.hero-grid-top,
 .content-grid,
 .currency-row,
 .status-strip,
@@ -126,9 +127,10 @@ h1 {
   max-width: none;
   white-space: nowrap;
   margin-bottom: 0;
-  font-family: "Instrument Serif", serif;
+  font-family: "Sarabun", sans-serif;
   font-size: clamp(2.25rem, 5.2vw, 5rem);
-  font-weight: 400;
+  font-weight: 700;
+  line-height: 1.06;
 }
 
 h2 {
@@ -137,6 +139,7 @@ h2 {
 }
 
 .hero-grid,
+.hero-grid-top,
 .content-grid {
   grid-template-columns: repeat(12, minmax(0, 1fr));
 }
@@ -161,7 +164,6 @@ h2 {
   background: radial-gradient(circle, rgba(243, 212, 188, 0.42), transparent 72%);
 }
 
-.hero-copy,
 .hero-spotlight,
 .converter-panel,
 .rates-panel,
@@ -170,12 +172,8 @@ h2 {
   padding: 1.5rem;
 }
 
-.hero-copy {
-  grid-column: span 4;
-}
-
 .hero-spotlight {
-  grid-column: span 4;
+  grid-column: span 6;
   background:
     radial-gradient(circle at top right, rgba(243, 212, 188, 0.15), transparent 28%),
     linear-gradient(160deg, #191d18 0%, #232824 100%);
@@ -186,6 +184,10 @@ h2 {
   background:
     radial-gradient(circle at top right, rgba(15, 127, 115, 0.16), transparent 30%),
     linear-gradient(160deg, #14201f 0%, #1b2e2c 100%);
+}
+
+.hero-spotlight-spread {
+  min-height: 100%;
 }
 
 .hero-spotlight .eyebrow,
@@ -257,8 +259,12 @@ h2 {
 }
 
 .pair-badge {
-  background: rgba(255, 255, 255, 0.08);
+  padding: 0;
+  background: none;
   color: #f7ede0;
+  font-size: 1.45rem;
+  letter-spacing: 0.02em;
+  text-transform: none;
 }
 
 .pulse-chip {
@@ -278,20 +284,16 @@ h2 {
 
 .hero-price {
   margin: 0.55rem 0;
-  font-family: "Instrument Serif", serif;
-  font-size: clamp(4rem, 9vw, 6.4rem);
-  font-weight: 400;
-  line-height: 0.92;
+  font-family: "Sarabun", sans-serif;
+  font-size: clamp(3.4rem, 7vw, 4.8rem);
+  font-weight: 700;
+  line-height: 0.95;
 }
 
 .hero-detail {
-  max-width: 30rem;
+  max-width: none;
   margin-bottom: 0;
   font-size: 0.98rem;
-}
-
-.hero-price-compact {
-  font-size: clamp(3rem, 7vw, 4.6rem);
 }
 
 .mini-stats {
@@ -299,9 +301,8 @@ h2 {
   margin-bottom: 1rem;
 }
 
-.mini-stats-dual {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  margin-bottom: 0;
+.mini-stats-quad {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .mini-stat {
@@ -315,6 +316,11 @@ h2 {
   display: block;
   margin-top: 0.35rem;
   font-size: 1.15rem;
+}
+
+.hero-number.is-refreshing,
+.mini-stat strong.is-refreshing {
+  animation: number-refresh 420ms ease;
 }
 
 .secondary-rate {
@@ -371,6 +377,15 @@ h2 {
   grid-column: 1 / -1;
   display: grid;
   gap: 0.85rem;
+}
+
+.lede-compact {
+  margin-bottom: 0;
+  max-width: none;
+}
+
+.source-status-strip {
+  margin-bottom: 0;
 }
 
 .converter-form {
@@ -537,9 +552,23 @@ tbody tr:hover {
   }
 }
 
+@keyframes number-refresh {
+  from {
+    transform: translateY(6px);
+    opacity: 0.68;
+    color: #fff3dd;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+    color: inherit;
+  }
+}
+
 @media (max-width: 980px) {
-  .hero-copy,
   .hero-spotlight,
+  .hero-spotlight-spread,
   .converter-panel,
   .rates-panel,
   .table-panel,
@@ -562,7 +591,7 @@ tbody tr:hover {
   .topbar,
   .status-strip,
   .mini-stats,
-  .mini-stats-dual,
+  .mini-stats-quad,
   .currency-row {
     grid-template-columns: 1fr;
   }
