@@ -88,6 +88,10 @@ function getDerivedRates() {
   return state.dashboard?.derived ?? null;
 }
 
+function getSourceErrors() {
+  return state.dashboard?.source_errors ?? {};
+}
+
 function getEurUsdMid() {
   const quote = getEurUsdQuote();
   if (!quote) {
@@ -277,53 +281,79 @@ function renderCards() {
   const usdtUsd = getUsdtUsdQuote();
   const derived = getDerivedRates();
 
-  if (!quote || !usdtThb || !usdtUsd || !derived) {
+  if (!quote && !usdtThb && !usdtUsd && !derived?.eur_thb_mid) {
     elements.rateCards.innerHTML = '<p class="empty-state">Waiting for the first live quote.</p>';
     return;
   }
 
-  const spread = quote.ask - quote.bid;
-  const mid = getUsdMid();
-  const closingMid = (quote.closingBid + quote.closingAsk) / 2;
-  const delta = mid - closingMid;
+  const cards = [];
 
-  elements.rateCards.innerHTML = `
-    <article class="rate-card">
-      <span class="rate-pair">${PAIR} Bid</span>
-      <strong class="rate-value">${formatNumber(quote.bid, 3)}</strong>
-      <span class="rate-subvalue">Live buy-side quote</span>
-    </article>
-    <article class="rate-card">
-      <span class="rate-pair">${PAIR} Ask</span>
-      <strong class="rate-value">${formatNumber(quote.ask, 3)}</strong>
-      <span class="rate-subvalue">Live sell-side quote</span>
-    </article>
-    <article class="rate-card">
-      <span class="rate-pair">Mid Price</span>
-      <strong class="rate-value">${formatNumber(mid, 3)}</strong>
-      <span class="rate-subvalue">${delta >= 0 ? "+" : ""}${formatNumber(delta, 3)} versus close</span>
-    </article>
-    <article class="rate-card">
-      <span class="rate-pair">EUR/THB</span>
-      <strong class="rate-value">${formatNumber(derived.eur_thb_mid, 3)}</strong>
-      <span class="rate-subvalue">Derived from EUR/USD and USD/THB</span>
-    </article>
-    <article class="rate-card">
-      <span class="rate-pair">USDT/THB Bid</span>
-      <strong class="rate-value">${formatNumber(usdtThb.bid, 3)}</strong>
-      <span class="rate-subvalue">Best bid from Bitkub</span>
-    </article>
-    <article class="rate-card">
-      <span class="rate-pair">USDT/THB Ask</span>
-      <strong class="rate-value">${formatNumber(usdtThb.ask, 3)}</strong>
-      <span class="rate-subvalue">Best ask from Bitkub</span>
-    </article>
-    <article class="rate-card">
-      <span class="rate-pair">USDT/USD</span>
-      <strong class="rate-value">${formatNumber(derived.usdt_usd_mid, 5)}</strong>
-      <span class="rate-subvalue">Midpoint from Coinbase book</span>
-    </article>
-  `;
+  if (quote) {
+    const spread = quote.ask - quote.bid;
+    const mid = getUsdMid();
+    const closingMid = (quote.closingBid + quote.closingAsk) / 2;
+    const delta = mid - closingMid;
+
+    cards.push(`
+      <article class="rate-card">
+        <span class="rate-pair">${PAIR} Bid</span>
+        <strong class="rate-value">${formatNumber(quote.bid, 3)}</strong>
+        <span class="rate-subvalue">Live buy-side quote</span>
+      </article>
+      <article class="rate-card">
+        <span class="rate-pair">${PAIR} Ask</span>
+        <strong class="rate-value">${formatNumber(quote.ask, 3)}</strong>
+        <span class="rate-subvalue">Live sell-side quote</span>
+      </article>
+      <article class="rate-card">
+        <span class="rate-pair">Mid Price</span>
+        <strong class="rate-value">${formatNumber(mid, 3)}</strong>
+        <span class="rate-subvalue">${delta >= 0 ? "+" : ""}${formatNumber(delta, 3)} versus close</span>
+      </article>
+      <article class="rate-card">
+        <span class="rate-pair">USD/THB Spread</span>
+        <strong class="rate-value">${formatNumber(spread, 3)}</strong>
+        <span class="rate-subvalue">Live OANDA spread</span>
+      </article>
+    `);
+  }
+
+  if (derived?.eur_thb_mid) {
+    cards.push(`
+      <article class="rate-card">
+        <span class="rate-pair">EUR/THB</span>
+        <strong class="rate-value">${formatNumber(derived.eur_thb_mid, 3)}</strong>
+        <span class="rate-subvalue">Derived from EUR/USD and USD/THB</span>
+      </article>
+    `);
+  }
+
+  if (usdtThb) {
+    cards.push(`
+      <article class="rate-card">
+        <span class="rate-pair">USDT/THB Bid</span>
+        <strong class="rate-value">${formatNumber(usdtThb.bid, 3)}</strong>
+        <span class="rate-subvalue">Best bid from Bitkub</span>
+      </article>
+      <article class="rate-card">
+        <span class="rate-pair">USDT/THB Ask</span>
+        <strong class="rate-value">${formatNumber(usdtThb.ask, 3)}</strong>
+        <span class="rate-subvalue">Best ask from Bitkub</span>
+      </article>
+    `);
+  }
+
+  if (derived?.usdt_usd_mid) {
+    cards.push(`
+      <article class="rate-card">
+        <span class="rate-pair">USDT/USD</span>
+        <strong class="rate-value">${formatNumber(derived.usdt_usd_mid, 5)}</strong>
+        <span class="rate-subvalue">Midpoint from Coinbase book</span>
+      </article>
+    `);
+  }
+
+  elements.rateCards.innerHTML = cards.join("");
 }
 
 function renderMetrics() {
@@ -332,7 +362,7 @@ function renderMetrics() {
   const usdtUsd = getUsdtUsdQuote();
   const derived = getDerivedRates();
 
-  if (!quote || !usdtThb || !usdtUsd || !derived) {
+  if (!quote && !usdtThb && !usdtUsd && !derived?.eur_thb_mid) {
     elements.metricsTableBody.innerHTML = `
       <tr>
         <td colspan="2" class="empty-state">Waiting for the first live quote.</td>
@@ -341,23 +371,53 @@ function renderMetrics() {
     return;
   }
 
-  const rows = [
-    ["Pair", PAIR],
-    ["Timestamp", formatDateTime(quote.timestamp)],
-    ["Opening Bid", formatNumber(quote.openingBid, 3)],
-    ["Opening Ask", formatNumber(quote.openingAsk, 3)],
-    ["Closing Bid", formatNumber(quote.closingBid, 3)],
-    ["Closing Ask", formatNumber(quote.closingAsk, 3)],
-    ["Session High", formatNumber(quote.high, 3)],
-    ["Session Low", formatNumber(quote.low, 3)],
-    ["EUR/USD Mid", formatNumber((state.dashboard.eur_usd.bid + state.dashboard.eur_usd.ask) / 2, 5)],
-    ["EUR/THB Mid", formatNumber(derived.eur_thb_mid, 3)],
-    ["USDT/THB Bid (Bitkub)", formatNumber(usdtThb.bid, 3)],
-    ["USDT/THB Ask (Bitkub)", formatNumber(usdtThb.ask, 3)],
-    ["USDT/USD Bid (Coinbase)", formatNumber(usdtUsd.bid, 5)],
-    ["USDT/USD Ask (Coinbase)", formatNumber(usdtUsd.ask, 5)],
-    ["USDT/USD Mid (Coinbase)", formatNumber(derived.usdt_usd_mid, 5)],
-  ];
+  const rows = [];
+
+  if (quote) {
+    rows.push(
+      ["Pair", PAIR],
+      ["Timestamp", formatDateTime(quote.timestamp)],
+      ["Opening Bid", formatNumber(quote.openingBid, 3)],
+      ["Opening Ask", formatNumber(quote.openingAsk, 3)],
+      ["Closing Bid", formatNumber(quote.closingBid, 3)],
+      ["Closing Ask", formatNumber(quote.closingAsk, 3)],
+      ["Session High", formatNumber(quote.high, 3)],
+      ["Session Low", formatNumber(quote.low, 3)]
+    );
+  }
+
+  if (state.dashboard?.eur_usd) {
+    rows.push(["EUR/USD Mid", formatNumber((state.dashboard.eur_usd.bid + state.dashboard.eur_usd.ask) / 2, 5)]);
+  }
+
+  if (derived?.eur_thb_mid) {
+    rows.push(["EUR/THB Mid", formatNumber(derived.eur_thb_mid, 3)]);
+  }
+
+  if (usdtThb) {
+    rows.push(
+      ["USDT/THB Bid (Bitkub)", formatNumber(usdtThb.bid, 3)],
+      ["USDT/THB Ask (Bitkub)", formatNumber(usdtThb.ask, 3)]
+    );
+  }
+
+  if (usdtUsd) {
+    rows.push(
+      ["USDT/USD Bid (Coinbase)", formatNumber(usdtUsd.bid, 5)],
+      ["USDT/USD Ask (Coinbase)", formatNumber(usdtUsd.ask, 5)]
+    );
+  }
+
+  if (derived?.usdt_usd_mid) {
+    rows.push(["USDT/USD Mid (Coinbase)", formatNumber(derived.usdt_usd_mid, 5)]);
+  }
+
+  const errors = getSourceErrors();
+  Object.entries(errors)
+    .filter(([, value]) => Boolean(value))
+    .forEach(([key, value]) => {
+      rows.push([`${key} status`, `Unavailable`]);
+    });
 
   elements.metricsTableBody.innerHTML = rows
     .map(
@@ -372,8 +432,14 @@ function renderMetrics() {
 }
 
 function renderUpdatedAt() {
-  const quote = getUsdThbQuote();
-  elements.updatedText.textContent = quote ? formatDateTime(quote.timestamp) : "Waiting for data";
+  const timestamps = [
+    getUsdThbQuote()?.timestamp,
+    getEurUsdQuote()?.timestamp,
+    getUsdtThbQuote()?.timestamp,
+    getUsdtUsdQuote()?.timestamp,
+  ].filter(Boolean);
+
+  elements.updatedText.textContent = timestamps.length ? formatDateTime(timestamps.sort().at(-1)) : "Waiting for data";
 }
 
 function renderAll() {
@@ -391,7 +457,8 @@ async function loadQuote() {
   state.dashboard = data;
 
   renderAll();
-  setStatus("Live quote loaded");
+  const errorCount = Object.values(getSourceErrors()).filter(Boolean).length;
+  setStatus(errorCount ? "Live quote loaded with partial fallback" : "Live quote loaded");
 }
 
 function swapCurrencies() {

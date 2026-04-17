@@ -19,6 +19,17 @@ STREAM_URL_TEMPLATE = "https://labs-api.oanda.com/v2/rates?instruments={instrume
 BITKUB_DEPTH_URL = "https://api.bitkub.com/api/market/depth?sym=THB_USDT&lmt=1"
 COINBASE_BOOK_URL = "https://api.exchange.coinbase.com/products/USDT-USD/book?level=1"
 BASE_DIR = Path(__file__).resolve().parent
+UPSTREAM_ERRORS = (
+    TimeoutError,
+    socket.timeout,
+    URLError,
+    RuntimeError,
+    json.JSONDecodeError,
+    base64.binascii.Error,
+    KeyError,
+    IndexError,
+    ValueError,
+)
 
 
 def strip_padding(value: str) -> str:
@@ -138,29 +149,58 @@ def fetch_coinbase_usdt_usd_quote() -> dict[str, Any]:
     }
 
 
-def build_dashboard_payload() -> dict[str, Any]:
-    usd_thb = fetch_oanda_quote("USD_THB")
-    eur_usd = fetch_oanda_quote("EUR_USD")
-    usdt_thb = fetch_bitkub_usdt_thb_quote()
-    usdt_usd = fetch_coinbase_usdt_usd_quote()
+def try_fetch(fetcher: Any, *args: Any) -> tuple[dict[str, Any] | None, str | None]:
+    try:
+        return fetcher(*args), None
+    except UPSTREAM_ERRORS as error:
+        return None, str(error)
 
-    usd_thb_mid = (usd_thb["bid"] + usd_thb["ask"]) / 2
-    eur_usd_mid = (eur_usd["bid"] + eur_usd["ask"]) / 2
-    usdt_thb_mid = (usdt_thb["bid"] + usdt_thb["ask"]) / 2
-    usdt_usd_mid = (usdt_usd["bid"] + usdt_usd["ask"]) / 2
-    eur_thb_mid = eur_usd_mid * usd_thb_mid
+
+def build_dashboard_payload() -> dict[str, Any]:
+    usd_thb, usd_thb_error = try_fetch(fetch_oanda_quote, "USD_THB")
+    eur_usd, eur_usd_error = try_fetch(fetch_oanda_quote, "EUR_USD")
+    usdt_thb, usdt_thb_error = try_fetch(fetch_bitkub_usdt_thb_quote)
+    usdt_usd, usdt_usd_error = try_fetch(fetch_coinbase_usdt_usd_quote)
+
+    if not any((usd_thb, eur_usd, usdt_thb, usdt_usd)):
+        raise RuntimeError("All upstream market feeds are unavailable")
+
+    derived: dict[str, float | None] = {
+        "eur_thb_mid": None,
+        "usd_thb_fee_1pct": None,
+        "usd_thb_fee_3pct": None,
+        "usdt_thb_mid": None,
+        "usdt_usd_mid": None,
+    }
+
+    if usd_thb:
+        usd_thb_mid = (usd_thb["bid"] + usd_thb["ask"]) / 2
+        derived["usd_thb_fee_1pct"] = round(usd_thb_mid * 1.01, 6)
+        derived["usd_thb_fee_3pct"] = round(usd_thb_mid * 1.03, 6)
+
+        if eur_usd:
+            eur_usd_mid = (eur_usd["bid"] + eur_usd["ask"]) / 2
+            derived["eur_thb_mid"] = round(eur_usd_mid * usd_thb_mid, 6)
+
+    if usdt_thb:
+        usdt_thb_mid = (usdt_thb["bid"] + usdt_thb["ask"]) / 2
+        derived["usdt_thb_mid"] = round(usdt_thb_mid, 6)
+
+    if usdt_usd:
+        usdt_usd_mid = (usdt_usd["bid"] + usdt_usd["ask"]) / 2
+        derived["usdt_usd_mid"] = round(usdt_usd_mid, 6)
 
     return {
         "usd_thb": usd_thb,
         "eur_usd": eur_usd,
         "usdt_thb": usdt_thb,
         "usdt_usd": usdt_usd,
-        "derived": {
-            "eur_thb_mid": round(eur_thb_mid, 6),
-            "usd_thb_fee_1pct": round(usd_thb_mid * 1.01, 6),
-            "usd_thb_fee_3pct": round(usd_thb_mid * 1.03, 6),
-            "usdt_thb_mid": round(usdt_thb_mid, 6),
-            "usdt_usd_mid": round(usdt_usd_mid, 6),
+        "derived": derived,
+        "source_errors": {
+            "usd_thb": usd_thb_error,
+            "eur_usd": eur_usd_error,
+            "usdt_thb": usdt_thb_error,
+            "usdt_usd": usdt_usd_error,
         },
     }
 
@@ -190,24 +230,14 @@ class QuoteRateHandler(SimpleHTTPRequestHandler):
         try:
             payload = fetch_oanda_quote("USD_THB")
             self.send_json(payload)
-        except (TimeoutError, socket.timeout, URLError, RuntimeError, json.JSONDecodeError, base64.binascii.Error) as error:
+        except UPSTREAM_ERRORS as error:
             self.send_json({"error": str(error)}, status=502)
 
     def handle_dashboard(self) -> None:
         try:
             payload = build_dashboard_payload()
             self.send_json(payload)
-        except (
-            TimeoutError,
-            socket.timeout,
-            URLError,
-            RuntimeError,
-            json.JSONDecodeError,
-            base64.binascii.Error,
-            KeyError,
-            IndexError,
-            ValueError,
-        ) as error:
+        except UPSTREAM_ERRORS as error:
             self.send_json({"error": str(error)}, status=502)
 
     def send_json(self, payload: dict[str, Any], status: int = 200) -> None:
