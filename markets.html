@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QuoteRate | Markets</title>
+    <meta
+      name="description"
+      content="QuoteRate markets overview for USD/THB, USDT/THB, and USDT/USD."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <nav class="topbar">
+          <div class="brand-lockup">
+            <span class="brand-mark">QR</span>
+            <div>
+              <p class="eyebrow">QuoteRate</p>
+              <h1>Live Exchange Rate</h1>
+              <p class="page-context">Markets</p>
+            </div>
+          </div>
+          <a id="refreshNavButton" class="ghost-button ghost-link" href="./index.html">Refresh Now</a>
+        </nav>
+
+        <nav class="page-nav" aria-label="Primary">
+          <a class="page-nav-link" href="./index.html">Home</a>
+          <a class="page-nav-link is-active" href="./markets.html">Markets</a>
+          <a class="page-nav-link" href="./about.html">About</a>
+        </nav>
+      </header>
+
+      <main class="static-page">
+        <section class="panel static-panel">
+          <div class="panel-heading">
+            <p class="eyebrow">Tracked Pairs</p>
+            <h2>Live markets in this dashboard</h2>
+          </div>
+          <ul class="static-list">
+            <li><strong>USD/THB</strong> comes from OANDA’s live rate stream.</li>
+            <li><strong>USDT/THB</strong> comes from Bitkub top-of-book bid and ask.</li>
+            <li><strong>USDT/USD</strong> comes from Coinbase top-of-book bid and ask.</li>
+          </ul>
+        </section>
+
+        <section class="panel static-panel">
+          <div class="panel-heading">
+            <p class="eyebrow">Refresh Model</p>
+            <h2>How often values update</h2>
+          </div>
+          <p class="static-copy">
+            QuoteRate checks the live dashboard payload every 1 minute and also supports manual refresh from the main dashboard. If one market source is temporarily unavailable, the app falls back to the remaining healthy sources instead of blanking the whole page.
+          </p>
+        </section>
+
+        <section class="panel static-panel">
+          <div class="panel-heading">
+            <p class="eyebrow">Sources</p>
+            <h2>Where each number comes from</h2>
+          </div>
+          <ul class="static-list">
+            <li>OANDA powers the live fiat exchange cards and the USD/THB reference flow.</li>
+            <li>Bitkub provides crypto-to-THB order book pricing for USDT/THB.</li>
+            <li>Coinbase provides crypto-to-USD order book pricing for USDT/USD.</li>
+          </ul>
+        </section>
+      </main>
+    </div>
+    <script src="nav.js"></script>
+  </body>
+</html>

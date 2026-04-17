@@ -25,13 +25,22 @@
             <div>
               <p class="eyebrow">QuoteRate</p>
               <h1>Live Exchange Rate</h1>
+              <p class="page-context">Home</p>
             </div>
           </div>
           <button id="refreshButton" class="ghost-button" type="button">Refresh Now</button>
         </nav>
 
-        <div class="hero-grid hero-grid-top">
-          <section class="hero-spotlight panel hero-spotlight-spread">
+        <nav class="page-nav" aria-label="Primary">
+          <a class="page-nav-link is-active" href="./index.html">Home</a>
+          <a class="page-nav-link" href="./markets.html">Markets</a>
+          <a class="page-nav-link" href="./about.html">About</a>
+        </nav>
+
+        <p id="heroTimestamp" class="hero-timestamp">Waiting for the first quote.</p>
+
+        <div class="hero-grid hero-grid-top hero-grid-triple">
+          <section class="hero-spotlight panel hero-spotlight-spread hero-market-card hero-market-card-compact">
             <div class="quote-stack">
               <div class="quote-row">
                 <span class="pair-badge">USD/THB</span>
@@ -40,15 +49,7 @@
               <h2 id="heroSpreadUsdPrice" class="hero-price">--.--</h2>
               <p id="heroSpreadUsdDetail" class="hero-detail">Waiting for the first quote.</p>
             </div>
-            <div class="mini-stats mini-stats-quad">
-              <div class="mini-stat">
-                <span class="meta-label">Mid Rate</span>
-                <strong id="heroSpreadUsdBase">--.--</strong>
-              </div>
-              <div class="mini-stat">
-                <span class="meta-label">Spread</span>
-                <strong id="heroSpreadUsdAdjusted">--.--</strong>
-              </div>
+            <div class="mini-stats mini-stats-triple">
               <div class="mini-stat">
                 <span class="meta-label">Bid</span>
                 <strong id="heroSpreadUsdBid">--.--</strong>
@@ -57,38 +58,92 @@
                 <span class="meta-label">Ask</span>
                 <strong id="heroSpreadUsdAsk">--.--</strong>
               </div>
+              <div class="mini-stat">
+                <span class="meta-label">Spread</span>
+                <strong id="heroSpreadUsdAdjusted">--.--</strong>
+              </div>
             </div>
           </section>
 
-          <section class="hero-spotlight panel hero-spotlight-alt hero-spotlight-spread">
+          <section class="hero-spotlight panel hero-spotlight-spread hero-market-card hero-market-card-compact">
             <div class="quote-stack">
               <div class="quote-row">
-                <span class="pair-badge">EUR/THB</span>
-                <span class="pulse-chip">Live on OANDA</span>
+                <span class="pair-badge">USDT/THB</span>
+                <span class="pulse-chip">Live on Bitkub</span>
               </div>
-              <h2 id="heroSpreadEurPrice" class="hero-price">--.--</h2>
-              <p id="heroSpreadEurDetail" class="hero-detail">Waiting for the first quote.</p>
+              <h2 id="heroUsdtThbPrice" class="hero-price">--.--</h2>
+              <p id="heroUsdtThbDetail" class="hero-detail">Waiting for the first quote.</p>
             </div>
-            <div class="mini-stats mini-stats-quad">
-              <div class="mini-stat">
-                <span class="meta-label">Mid Rate</span>
-                <strong id="heroSpreadEurBase">--.--</strong>
-              </div>
-              <div class="mini-stat">
-                <span class="meta-label">Spread</span>
-                <strong id="heroSpreadEurAdjusted">--.--</strong>
-              </div>
+            <div class="mini-stats mini-stats-triple">
               <div class="mini-stat">
                 <span class="meta-label">Bid</span>
-                <strong id="heroSpreadEurBid">--.--</strong>
+                <strong id="heroUsdtThbBid">--.--</strong>
               </div>
               <div class="mini-stat">
                 <span class="meta-label">Ask</span>
-                <strong id="heroSpreadEurAsk">--.--</strong>
+                <strong id="heroUsdtThbAsk">--.--</strong>
+              </div>
+              <div class="mini-stat">
+                <span class="meta-label">Spread</span>
+                <strong id="heroUsdtThbSpread">--.--</strong>
+              </div>
+            </div>
+          </section>
+
+          <section class="hero-spotlight panel hero-spotlight-alt hero-spotlight-spread hero-market-card hero-market-card-compact">
+            <div class="quote-stack">
+              <div class="quote-row">
+                <span class="pair-badge">USDT/USD</span>
+                <span class="pulse-chip">Live on Coinbase</span>
+              </div>
+              <h2 id="heroUsdtUsdPrice" class="hero-price">--.--</h2>
+              <p id="heroUsdtUsdDetail" class="hero-detail">Waiting for the first quote.</p>
+            </div>
+            <div class="mini-stats mini-stats-quad">
+              <div class="mini-stat">
+                <span class="meta-label">Bid</span>
+                <strong id="heroUsdtUsdBid">--.--</strong>
+              </div>
+              <div class="mini-stat">
+                <span class="meta-label">Ask</span>
+                <strong id="heroUsdtUsdAsk">--.--</strong>
+              </div>
+              <div class="mini-stat">
+                <span class="meta-label">Spread</span>
+                <strong id="heroUsdtUsdSpread">--.--</strong>
               </div>
             </div>
           </section>
         </div>
+
+        <section class="panel chart-panel">
+          <div class="panel-heading">
+            <p class="eyebrow">USD/THB Trend</p>
+            <h2>Time Graph</h2>
+          </div>
+          <div class="chart-meta">
+            <div class="chart-stat">
+              <span class="meta-label">Current</span>
+              <strong id="chartCurrent">--.--</strong>
+            </div>
+            <div class="chart-stat">
+              <span class="meta-label">High</span>
+              <strong id="chartHigh">--.--</strong>
+            </div>
+            <div class="chart-stat">
+              <span class="meta-label">Low</span>
+              <strong id="chartLow">--.--</strong>
+            </div>
+          </div>
+          <div class="chart-surface">
+            <svg id="usdThbChart" class="trend-chart" viewBox="0 0 640 220" preserveAspectRatio="none" aria-label="USD to THB trend chart">
+              <path id="usdThbChartArea" class="trend-area" d=""></path>
+              <path id="usdThbChartLine" class="trend-line" d=""></path>
+            </svg>
+            <p id="chartEmpty" class="chart-empty">Waiting for enough USD/THB history to draw the graph.</p>
+          </div>
+          <div id="chartLabels" class="chart-labels"></div>
+        </section>
       </header>
 
       <main class="content-grid">

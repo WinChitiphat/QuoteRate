@@ -56,6 +56,7 @@ body::before {
 .topbar,
 .hero-grid,
 .hero-grid-top,
+.page-nav,
 .content-grid,
 .currency-row,
 .status-strip,
@@ -67,7 +68,58 @@ body::before {
 .topbar {
   grid-template-columns: 1fr auto;
   align-items: start;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.page-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: fit-content;
+  margin-bottom: 0.8rem;
+  padding: 0.45rem;
+  border: 1px solid rgba(31, 28, 24, 0.08);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.56);
+  box-shadow: 0 14px 28px rgba(96, 61, 28, 0.08);
+}
+
+.page-nav-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 7.5rem;
+  padding: 0.85rem 1.2rem;
+  border-radius: 0.85rem;
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  transition: background 180ms ease, color 180ms ease, transform 180ms ease;
+}
+
+.page-nav-link:hover {
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--text);
+}
+
+.page-nav-link.is-active {
+  background: #1f211c;
+  color: #fff7ef;
+}
+
+.hero-timestamp {
+  margin: 0 0 1.5rem;
+  color: var(--muted);
+  font-size: 0.96rem;
+}
+
+.page-context {
+  margin: 0.45rem 0 0;
+  color: var(--muted);
+  font-size: 1rem;
+  font-weight: 600;
 }
 
 .brand-lockup {
@@ -144,6 +196,10 @@ h2 {
   grid-template-columns: repeat(12, minmax(0, 1fr));
 }
 
+.hero-grid-triple {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .panel {
   position: relative;
   overflow: hidden;
@@ -162,6 +218,81 @@ h2 {
   height: 190px;
   border-radius: 50%;
   background: radial-gradient(circle, rgba(243, 212, 188, 0.42), transparent 72%);
+}
+
+.chart-panel {
+  margin-top: 1rem;
+  padding: 1.5rem;
+}
+
+.chart-meta,
+.chart-labels {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.chart-meta {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 1rem;
+}
+
+.chart-stat {
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(31, 28, 24, 0.08);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.44);
+}
+
+.chart-stat strong {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 1.15rem;
+}
+
+.chart-surface {
+  position: relative;
+  min-height: 240px;
+  padding: 1rem;
+  border-radius: 1.3rem;
+  background:
+    linear-gradient(rgba(31, 28, 24, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(31, 28, 24, 0.05) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(247, 237, 225, 0.86));
+  background-size: 100% 25%, 12% 100%, auto;
+}
+
+.trend-chart {
+  width: 100%;
+  height: 220px;
+  display: block;
+}
+
+.trend-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.trend-area {
+  fill: rgba(193, 90, 34, 0.16);
+}
+
+.chart-empty {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+  width: min(90%, 26rem);
+  text-align: center;
+  color: var(--muted);
+}
+
+.chart-labels {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 0.9rem;
+  color: var(--muted);
+  font-size: 0.88rem;
 }
 
 .hero-spotlight,
@@ -188,6 +319,10 @@ h2 {
 
 .hero-spotlight-spread {
   min-height: 100%;
+}
+
+.hero-market-card-compact {
+  grid-column: span 1;
 }
 
 .hero-spotlight .eyebrow,
@@ -301,8 +436,8 @@ h2 {
   margin-bottom: 1rem;
 }
 
-.mini-stats-quad {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+.mini-stats-triple {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .mini-stat {
@@ -350,6 +485,13 @@ h2 {
   border-radius: 999px;
   background: #1f211c;
   color: #fff7ef;
+}
+
+.ghost-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
 }
 
 .ghost-button:hover,
@@ -545,6 +687,29 @@ tbody tr:hover {
   color: var(--muted);
 }
 
+.static-page {
+  display: grid;
+  gap: 1rem;
+}
+
+.static-panel {
+  padding: 1.5rem;
+}
+
+.static-copy {
+  margin: 0;
+  max-width: 52rem;
+  color: #433b32;
+  line-height: 1.7;
+}
+
+.static-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: #433b32;
+  line-height: 1.7;
+}
+
 @keyframes rise {
   to {
     transform: translateY(0);
@@ -591,9 +756,21 @@ tbody tr:hover {
   .topbar,
   .status-strip,
   .mini-stats,
-  .mini-stats-quad,
+  .mini-stats-triple,
+  .chart-meta,
+  .chart-labels,
   .currency-row {
     grid-template-columns: 1fr;
+  }
+
+  .page-nav {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .page-nav-link {
+    flex: 1 1 100%;
+    min-width: 0;
   }
 
   .brand-lockup {

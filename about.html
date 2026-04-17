@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QuoteRate | About</title>
+    <meta
+      name="description"
+      content="About QuoteRate, a lightweight live exchange rate dashboard."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <nav class="topbar">
+          <div class="brand-lockup">
+            <span class="brand-mark">QR</span>
+            <div>
+              <p class="eyebrow">QuoteRate</p>
+              <h1>Live Exchange Rate</h1>
+              <p class="page-context">About</p>
+            </div>
+          </div>
+          <a id="refreshNavButton" class="ghost-button ghost-link" href="./index.html">Refresh Now</a>
+        </nav>
+
+        <nav class="page-nav" aria-label="Primary">
+          <a class="page-nav-link" href="./index.html">Home</a>
+          <a class="page-nav-link" href="./markets.html">Markets</a>
+          <a class="page-nav-link is-active" href="./about.html">About</a>
+        </nav>
+      </header>
+
+      <main class="static-page">
+        <section class="panel static-panel">
+          <div class="panel-heading">
+            <p class="eyebrow">Product</p>
+            <h2>What QuoteRate is for</h2>
+          </div>
+          <p class="static-copy">
+            QuoteRate is a lightweight exchange-rate dashboard focused on Thailand-relevant pricing. It combines fiat and stablecoin views into one interface so you can compare reference FX pricing with crypto-based market pricing without juggling multiple tabs.
+          </p>
+        </section>
+
+        <section class="panel static-panel">
+          <div class="panel-heading">
+            <p class="eyebrow">Architecture</p>
+            <h2>How it runs</h2>
+          </div>
+          <p class="static-copy">
+            The frontend is plain HTML, CSS, and JavaScript. A small Python server serves the pages and fetches upstream data server-side, which keeps the browser simple and avoids cross-origin issues with market feeds that do not allow direct browser requests.
+          </p>
+        </section>
+
+        <section class="panel static-panel">
+          <div class="panel-heading">
+            <p class="eyebrow">Limitations</p>
+            <h2>What to keep in mind</h2>
+          </div>
+          <ul class="static-list">
+            <li>Values depend on upstream availability and may degrade to partial results if one source is temporarily unavailable.</li>
+            <li>Rates shown here are market references and should not be treated as a guaranteed execution price.</li>
+            <li>Different providers may update on different cadences, so timestamps can differ across pairs.</li>
+          </ul>
+        </section>
+      </main>
+    </div>
+    <script src="nav.js"></script>
+  </body>
+</html>

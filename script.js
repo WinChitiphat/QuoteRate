@@ -1,11 +1,17 @@
 const API_URL = "/api/dashboard";
 const PAIR = "USD/THB";
 const POLL_INTERVAL_MS = 60_000;
+const CACHE_KEY = "quoterate-dashboard-cache";
+const HISTORY_KEY = "quoterate-usdthb-history";
+const FORCE_REFRESH_KEY = "quoterate-force-refresh";
+const MAX_HISTORY_POINTS = 24;
 const state = {
   amount: 100,
   from: "USD",
   to: "THB",
   dashboard: null,
+  fetchedAt: 0,
+  history: [],
 };
 
 const elements = {
@@ -14,20 +20,31 @@ const elements = {
   toCurrency: document.getElementById("toCurrency"),
   heroSpreadUsdPrice: document.getElementById("heroSpreadUsdPrice"),
   heroSpreadUsdDetail: document.getElementById("heroSpreadUsdDetail"),
-  heroSpreadUsdBase: document.getElementById("heroSpreadUsdBase"),
   heroSpreadUsdAdjusted: document.getElementById("heroSpreadUsdAdjusted"),
   heroSpreadUsdBid: document.getElementById("heroSpreadUsdBid"),
   heroSpreadUsdAsk: document.getElementById("heroSpreadUsdAsk"),
-  heroSpreadEurPrice: document.getElementById("heroSpreadEurPrice"),
-  heroSpreadEurDetail: document.getElementById("heroSpreadEurDetail"),
-  heroSpreadEurBase: document.getElementById("heroSpreadEurBase"),
-  heroSpreadEurAdjusted: document.getElementById("heroSpreadEurAdjusted"),
-  heroSpreadEurBid: document.getElementById("heroSpreadEurBid"),
-  heroSpreadEurAsk: document.getElementById("heroSpreadEurAsk"),
+  heroUsdtThbPrice: document.getElementById("heroUsdtThbPrice"),
+  heroUsdtThbDetail: document.getElementById("heroUsdtThbDetail"),
+  heroUsdtThbBid: document.getElementById("heroUsdtThbBid"),
+  heroUsdtThbAsk: document.getElementById("heroUsdtThbAsk"),
+  heroUsdtThbSpread: document.getElementById("heroUsdtThbSpread"),
+  heroUsdtUsdPrice: document.getElementById("heroUsdtUsdPrice"),
+  heroUsdtUsdDetail: document.getElementById("heroUsdtUsdDetail"),
+  heroUsdtUsdBid: document.getElementById("heroUsdtUsdBid"),
+  heroUsdtUsdAsk: document.getElementById("heroUsdtUsdAsk"),
+  heroUsdtUsdSpread: document.getElementById("heroUsdtUsdSpread"),
   rateCards: document.getElementById("rateCards"),
   metricsTableBody: document.getElementById("metricsTableBody"),
   conversionResult: document.getElementById("conversionResult"),
   conversionDetail: document.getElementById("conversionDetail"),
+  heroTimestamp: document.getElementById("heroTimestamp"),
+  chartLine: document.getElementById("usdThbChartLine"),
+  chartArea: document.getElementById("usdThbChartArea"),
+  chartEmpty: document.getElementById("chartEmpty"),
+  chartCurrent: document.getElementById("chartCurrent"),
+  chartHigh: document.getElementById("chartHigh"),
+  chartLow: document.getElementById("chartLow"),
+  chartLabels: document.getElementById("chartLabels"),
   statusText: document.getElementById("statusText"),
   updatedText: document.getElementById("updatedText"),
   refreshButton: document.getElementById("refreshButton"),
@@ -48,6 +65,89 @@ async function fetchQuote() {
 
 function setStatus(message) {
   elements.statusText.textContent = message;
+}
+
+function readCachedDashboard() {
+  try {
+    const raw = window.localStorage.getItem(CACHE_KEY);
+    if (!raw) {
+      return null;
+    }
+
+    const parsed = JSON.parse(raw);
+    if (!parsed?.dashboard || !parsed?.fetchedAt) {
+      return null;
+    }
+
+    return parsed;
+  } catch (error) {
+    console.warn("Unable to read cached dashboard", error);
+    return null;
+  }
+}
+
+function writeCachedDashboard(dashboard) {
+  const payload = {
+    dashboard,
+    fetchedAt: Date.now(),
+  };
+
+  state.dashboard = dashboard;
+  state.fetchedAt = payload.fetchedAt;
+
+  try {
+    window.localStorage.setItem(CACHE_KEY, JSON.stringify(payload));
+  } catch (error) {
+    console.warn("Unable to write dashboard cache", error);
+  }
+}
+
+function readHistory() {
+  try {
+    const raw = window.localStorage.getItem(HISTORY_KEY);
+    if (!raw) {
+      return [];
+    }
+
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed;
+  } catch (error) {
+    console.warn("Unable to read USD/THB history", error);
+    return [];
+  }
+}
+
+function writeHistory() {
+  try {
+    window.localStorage.setItem(HISTORY_KEY, JSON.stringify(state.history));
+  } catch (error) {
+    console.warn("Unable to write USD/THB history", error);
+  }
+}
+
+function isRefreshDue() {
+  if (!state.fetchedAt) {
+    return true;
+  }
+
+  return Date.now() - state.fetchedAt >= POLL_INTERVAL_MS;
+}
+
+function consumeForcedRefresh() {
+  try {
+    const forced = window.localStorage.getItem(FORCE_REFRESH_KEY) === "true";
+    if (forced) {
+      window.localStorage.removeItem(FORCE_REFRESH_KEY);
+    }
+    return forced;
+  } catch (error) {
+    console.warn("Unable to read forced refresh flag", error);
+    return false;
+  }
 }
 
 function formatNumber(value, maximumFractionDigits = 4) {
@@ -108,6 +208,27 @@ function getUsdMid() {
   }
 
   return (quote.bid + quote.ask) / 2;
+}
+
+function updateUsdHistory() {
+  const quote = getUsdThbQuote();
+  const mid = getUsdMid();
+
+  if (!quote || mid === null) {
+    return;
+  }
+
+  const lastPoint = state.history.at(-1);
+  if (lastPoint?.timestamp === quote.timestamp) {
+    return;
+  }
+
+  state.history.push({
+    timestamp: quote.timestamp,
+    value: Number(mid.toFixed(6)),
+  });
+  state.history = state.history.slice(-MAX_HISTORY_POINTS);
+  writeHistory();
 }
 
 function getEurDerivedQuote() {
@@ -208,50 +329,64 @@ function getMovementDirection() {
 function resetHeroCards() {
   const placeholders = [
     elements.heroSpreadUsdPrice,
-    elements.heroSpreadUsdBase,
     elements.heroSpreadUsdAdjusted,
     elements.heroSpreadUsdBid,
     elements.heroSpreadUsdAsk,
-    elements.heroSpreadEurPrice,
-    elements.heroSpreadEurBase,
-    elements.heroSpreadEurAdjusted,
-    elements.heroSpreadEurBid,
-    elements.heroSpreadEurAsk,
+    elements.heroUsdtThbPrice,
+    elements.heroUsdtThbBid,
+    elements.heroUsdtThbAsk,
+    elements.heroUsdtThbSpread,
+    elements.heroUsdtUsdPrice,
+    elements.heroUsdtUsdBid,
+    elements.heroUsdtUsdAsk,
+    elements.heroUsdtUsdSpread,
   ];
 
   placeholders.forEach((element) => {
     element.textContent = "--.--";
   });
 
-  elements.heroSpreadUsdDetail.textContent = "Waiting for the first quote.";
-  elements.heroSpreadEurDetail.textContent = "Waiting for the first quote.";
+  elements.heroSpreadUsdDetail.textContent = "";
+  elements.heroUsdtThbDetail.textContent = "";
+  elements.heroUsdtUsdDetail.textContent = "";
+  elements.heroTimestamp.textContent = "Waiting for the first quote.";
 }
 
 function renderHeroQuote() {
   const usdQuote = getUsdThbQuote();
-  const eurQuote = getEurDerivedQuote();
+  const usdtThb = getUsdtThbQuote();
+  const usdtUsd = getUsdtUsdQuote();
 
-  if (!usdQuote || !eurQuote) {
+  if (!usdQuote || !usdtThb || !usdtUsd) {
     resetHeroCards();
     return;
   }
 
   const usdMid = getUsdMid();
   const usdSpread = usdQuote.ask - usdQuote.bid;
+  const usdtThbMid = (usdtThb.bid + usdtThb.ask) / 2;
+  const usdtThbSpread = usdtThb.ask - usdtThb.bid;
+  const usdtUsdMid = (usdtUsd.bid + usdtUsd.ask) / 2;
+  const usdtUsdSpread = usdtUsd.ask - usdtUsd.bid;
+  const usdtUsdInThb = usdtUsdMid * usdtThbMid;
 
   elements.heroSpreadUsdPrice.textContent = formatNumber(usdMid, 3);
-  elements.heroSpreadUsdDetail.textContent = `Quote timestamp ${formatDateTime(usdQuote.timestamp)}.`;
-  elements.heroSpreadUsdBase.textContent = formatNumber(usdMid, 3);
+  elements.heroSpreadUsdDetail.textContent = "";
   elements.heroSpreadUsdAdjusted.textContent = formatNumber(usdSpread, 3);
   elements.heroSpreadUsdBid.textContent = formatNumber(usdQuote.bid, 3);
   elements.heroSpreadUsdAsk.textContent = formatNumber(usdQuote.ask, 3);
 
-  elements.heroSpreadEurPrice.textContent = formatNumber(eurQuote.mid, 3);
-  elements.heroSpreadEurDetail.textContent = `Quote timestamp ${formatDateTime(eurQuote.timestamp)}.`;
-  elements.heroSpreadEurBase.textContent = formatNumber(eurQuote.mid, 3);
-  elements.heroSpreadEurAdjusted.textContent = formatNumber(eurQuote.spread, 3);
-  elements.heroSpreadEurBid.textContent = formatNumber(eurQuote.bid, 3);
-  elements.heroSpreadEurAsk.textContent = formatNumber(eurQuote.ask, 3);
+  elements.heroUsdtThbPrice.textContent = formatNumber(usdtThbMid, 3);
+  elements.heroUsdtThbDetail.textContent = "";
+  elements.heroUsdtThbBid.textContent = formatNumber(usdtThb.bid, 3);
+  elements.heroUsdtThbAsk.textContent = formatNumber(usdtThb.ask, 3);
+  elements.heroUsdtThbSpread.textContent = formatNumber(usdtThbSpread, 3);
+
+  elements.heroUsdtUsdPrice.textContent = formatNumber(usdtUsdMid, 5);
+  elements.heroUsdtUsdDetail.textContent = `THB rate ${formatNumber(usdtUsdInThb, 3)}.`;
+  elements.heroUsdtUsdBid.textContent = formatNumber(usdtUsd.bid, 5);
+  elements.heroUsdtUsdAsk.textContent = formatNumber(usdtUsd.ask, 5);
+  elements.heroUsdtUsdSpread.textContent = formatNumber(usdtUsdSpread, 5);
 
   animateHeroSpreadCards();
 }
@@ -273,6 +408,53 @@ function renderConversion() {
 
   elements.conversionResult.textContent = `${formatNumber(converted, 2)} ${state.to}`;
   elements.conversionDetail.textContent = `Using midpoint ${formatNumber(conversion.rate, 5)} ${conversion.label}`;
+}
+
+function renderChart() {
+  const points = state.history;
+
+  if (!points.length) {
+    elements.chartLine.setAttribute("d", "");
+    elements.chartArea.setAttribute("d", "");
+    elements.chartEmpty.hidden = false;
+    elements.chartCurrent.textContent = "--.--";
+    elements.chartHigh.textContent = "--.--";
+    elements.chartLow.textContent = "--.--";
+    elements.chartLabels.innerHTML = "";
+    return;
+  }
+
+  const values = points.map((point) => point.value);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 0.01;
+  const width = 640;
+  const height = 220;
+  const stepX = points.length > 1 ? width / (points.length - 1) : width / 2;
+
+  const coordinates = points.map((point, index) => {
+    const x = points.length > 1 ? index * stepX : width / 2;
+    const normalized = (point.value - min) / range;
+    const y = height - normalized * (height - 24) - 12;
+    return { x, y };
+  });
+
+  const linePath = coordinates
+    .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x.toFixed(2)} ${point.y.toFixed(2)}`)
+    .join(" ");
+  const areaPath = `${linePath} L ${coordinates.at(-1).x.toFixed(2)} ${height} L ${coordinates[0].x.toFixed(2)} ${height} Z`;
+
+  elements.chartLine.setAttribute("d", linePath);
+  elements.chartArea.setAttribute("d", areaPath);
+  elements.chartEmpty.hidden = points.length > 1;
+  elements.chartCurrent.textContent = formatNumber(points.at(-1).value, 3);
+  elements.chartHigh.textContent = formatNumber(max, 3);
+  elements.chartLow.textContent = formatNumber(min, 3);
+
+  const labelIndexes = [...new Set([0, Math.floor((points.length - 1) / 2), points.length - 1])];
+  elements.chartLabels.innerHTML = labelIndexes
+    .map((index) => `<span>${formatDateTime(points[index].timestamp)}</span>`)
+    .join("");
 }
 
 function renderCards() {
@@ -439,12 +621,22 @@ function renderUpdatedAt() {
     getUsdtUsdQuote()?.timestamp,
   ].filter(Boolean);
 
-  elements.updatedText.textContent = timestamps.length ? formatDateTime(timestamps.sort().at(-1)) : "Waiting for data";
+  if (timestamps.length) {
+    const latestTimestamp = formatDateTime(timestamps.sort().at(-1));
+    elements.updatedText.textContent = latestTimestamp;
+    elements.heroTimestamp.textContent = `Quote timestamp ${latestTimestamp}.`;
+    return;
+  }
+
+  elements.updatedText.textContent = "Waiting for data";
+  elements.heroTimestamp.textContent = "Waiting for the first quote.";
 }
 
 function renderAll() {
+  updateUsdHistory();
   renderHeroQuote();
   renderUpdatedAt();
+  renderChart();
   renderCards();
   renderMetrics();
   renderConversion();
@@ -454,11 +646,21 @@ async function loadQuote() {
   setStatus("Refreshing quote...");
   const data = await fetchQuote();
 
-  state.dashboard = data;
-
+  writeCachedDashboard(data);
   renderAll();
   const errorCount = Object.values(getSourceErrors()).filter(Boolean).length;
   setStatus(errorCount ? "Live quote loaded with partial fallback" : "Live quote loaded");
+}
+
+async function refreshIfDue() {
+  const forcedRefresh = consumeForcedRefresh();
+
+  if (!forcedRefresh && !isRefreshDue()) {
+    setStatus("Using recent quote");
+    return;
+  }
+
+  await loadQuote();
 }
 
 function swapCurrencies() {
@@ -496,10 +698,25 @@ function handleError(error) {
 async function init() {
   try {
     bindEvents();
-    await loadQuote();
+    const cached = readCachedDashboard();
+
+    if (cached) {
+      state.dashboard = cached.dashboard;
+      state.fetchedAt = cached.fetchedAt;
+      state.history = readHistory();
+      renderAll();
+      setStatus(isRefreshDue() ? "Quote due for refresh" : "Using recent quote");
+    }
+
+    if (!cached) {
+      state.history = readHistory();
+      renderChart();
+    }
+
+    await refreshIfDue();
 
     window.setInterval(() => {
-      loadQuote().catch(handleError);
+      refreshIfDue().catch(handleError);
     }, POLL_INTERVAL_MS);
   } catch (error) {
     handleError(error);
