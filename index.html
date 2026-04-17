@@ -32,7 +32,6 @@
 
         <div class="hero-grid">
           <section class="hero-copy panel">
-            <div class="eyebrow-pill">OANDA-backed live proxy</div>
             <p class="lede">
               Watch USD/THB bid and ask prices through a lightweight Python relay, with automatic checks every 30 seconds and an instant midpoint converter.
             </p>
@@ -50,9 +49,6 @@
                 <strong>OANDA via proxy</strong>
               </div>
             </div>
-            <p class="note">
-              OANDA's live stream is fetched server-side because the browser cannot call it directly from a static host. This dashboard reads the latest decoded USD/THB event from your same-origin API.
-            </p>
           </section>
 
           <section class="hero-spotlight panel">
@@ -79,9 +75,27 @@
                 <strong id="heroSpread">--.--</strong>
               </div>
             </div>
-            <div class="secondary-rate">
-              <span class="meta-label">EUR/THB Reference</span>
-              <strong id="heroEurThb">--.--</strong>
+          </section>
+
+          <section class="hero-spotlight panel hero-spotlight-alt">
+            <p class="eyebrow">Live Mid Price</p>
+            <div class="quote-stack">
+              <div class="quote-row">
+                <span class="pair-badge">EUR/THB</span>
+                <span id="eurReferenceTag" class="pulse-chip">Derived reference</span>
+              </div>
+              <h2 id="heroEurPrice" class="hero-price hero-price-compact">--.--</h2>
+              <p id="heroEurDetail" class="hero-detail">Waiting for the first quote.</p>
+            </div>
+            <div class="mini-stats mini-stats-dual">
+              <div class="mini-stat">
+                <span class="meta-label">EUR/USD Mid</span>
+                <strong id="heroEurUsd">--.--</strong>
+              </div>
+              <div class="mini-stat">
+                <span class="meta-label">EUR/THB</span>
+                <strong id="heroEurThb">--.--</strong>
+              </div>
             </div>
           </section>
         </div>
@@ -110,7 +124,7 @@
               </label>
 
               <button id="swapButton" class="swap-button" type="button" aria-label="Swap currencies">
-                <span aria-hidden="true">↔</span>
+                <span aria-hidden="true">&#8596;</span>
               </button>
 
               <label>
@@ -155,6 +169,13 @@
               <tbody id="metricsTableBody"></tbody>
             </table>
           </div>
+        </section>
+
+        <section class="panel source-panel">
+          <div class="eyebrow-pill">OANDA-backed live proxy</div>
+          <p class="note">
+            OANDA's live stream is fetched server-side because the browser cannot call it directly from a static host. This dashboard reads the latest decoded USD/THB event from your same-origin API.
+          </p>
         </section>
       </main>
     </div>

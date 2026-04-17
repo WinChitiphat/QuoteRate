@@ -165,20 +165,27 @@ h2 {
 .hero-spotlight,
 .converter-panel,
 .rates-panel,
-.table-panel {
+.table-panel,
+.source-panel {
   padding: 1.5rem;
 }
 
 .hero-copy {
-  grid-column: span 6;
+  grid-column: span 4;
 }
 
 .hero-spotlight {
-  grid-column: span 6;
+  grid-column: span 4;
   background:
     radial-gradient(circle at top right, rgba(243, 212, 188, 0.15), transparent 28%),
     linear-gradient(160deg, #191d18 0%, #232824 100%);
   color: #f5efe5;
+}
+
+.hero-spotlight-alt {
+  background:
+    radial-gradient(circle at top right, rgba(15, 127, 115, 0.16), transparent 30%),
+    linear-gradient(160deg, #14201f 0%, #1b2e2c 100%);
 }
 
 .hero-spotlight .eyebrow,
@@ -283,9 +290,18 @@ h2 {
   font-size: 0.98rem;
 }
 
+.hero-price-compact {
+  font-size: clamp(3rem, 7vw, 4.6rem);
+}
+
 .mini-stats {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   margin-bottom: 1rem;
+}
+
+.mini-stats-dual {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 0;
 }
 
 .mini-stat {
@@ -349,6 +365,12 @@ h2 {
 
 .table-panel {
   grid-column: span 8;
+}
+
+.source-panel {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 0.85rem;
 }
 
 .converter-form {
@@ -520,7 +542,8 @@ tbody tr:hover {
   .hero-spotlight,
   .converter-panel,
   .rates-panel,
-  .table-panel {
+  .table-panel,
+  .source-panel {
     grid-column: 1 / -1;
   }
 
@@ -539,6 +562,7 @@ tbody tr:hover {
   .topbar,
   .status-strip,
   .mini-stats,
+  .mini-stats-dual,
   .currency-row {
     grid-template-columns: 1fr;
   }

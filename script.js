@@ -20,6 +20,10 @@ const elements = {
   heroAsk: document.getElementById("heroAsk"),
   heroSpread: document.getElementById("heroSpread"),
   heroEurThb: document.getElementById("heroEurThb"),
+  heroEurPrice: document.getElementById("heroEurPrice"),
+  heroEurDetail: document.getElementById("heroEurDetail"),
+  heroEurUsd: document.getElementById("heroEurUsd"),
+  eurReferenceTag: document.getElementById("eurReferenceTag"),
   marketPulse: document.getElementById("marketPulse"),
   rateCards: document.getElementById("rateCards"),
   metricsTableBody: document.getElementById("metricsTableBody"),
@@ -110,6 +114,10 @@ function renderHeroQuote() {
     elements.heroAsk.textContent = "--.--";
     elements.heroSpread.textContent = "--.--";
     elements.heroEurThb.textContent = "--.--";
+    elements.heroEurPrice.textContent = "--.--";
+    elements.heroEurDetail.textContent = "Waiting for the first quote.";
+    elements.heroEurUsd.textContent = "--.--";
+    elements.eurReferenceTag.className = "pulse-chip";
     elements.marketPulse.textContent = "Waiting";
     elements.marketPulse.className = "pulse-chip";
     return;
@@ -130,6 +138,10 @@ function renderHeroQuote() {
   elements.heroAsk.textContent = formatNumber(quote.ask, 3);
   elements.heroSpread.textContent = formatNumber(spread, 3);
   elements.heroEurThb.textContent = formatNumber(derived.eur_thb_mid, 3);
+  elements.heroEurPrice.textContent = formatNumber(derived.eur_thb_mid, 3);
+  elements.heroEurUsd.textContent = formatNumber((state.dashboard.eur_usd.bid + state.dashboard.eur_usd.ask) / 2, 5);
+  elements.heroEurDetail.textContent = "Derived from the live EUR/USD midpoint multiplied by the live USD/THB midpoint.";
+  elements.eurReferenceTag.className = "pulse-chip";
   elements.marketPulse.textContent = movementLabels[direction];
   elements.marketPulse.className = `pulse-chip${direction === "flat" ? "" : ` is-${direction}`}`;
 }
