@@ -33,7 +33,7 @@
 
         <nav class="page-nav" aria-label="Primary">
           <a class="page-nav-link is-active" href="./index.html">Home</a>
-          <a class="page-nav-link" href="./markets.html">Markets</a>
+          <a class="page-nav-link" href="./arbitage.html">Arbitage</a>
           <a class="page-nav-link" href="./about.html">About</a>
         </nav>
 
@@ -136,94 +136,28 @@
             </div>
           </div>
           <div class="chart-surface">
-            <svg id="usdThbChart" class="trend-chart" viewBox="0 0 640 220" preserveAspectRatio="none" aria-label="USD to THB trend chart">
-              <path id="usdThbChartArea" class="trend-area" d=""></path>
-              <path id="usdThbChartLine" class="trend-line" d=""></path>
-            </svg>
-            <p id="chartEmpty" class="chart-empty">Waiting for enough USD/THB history to draw the graph.</p>
+            <div id="chartYAxis" class="chart-y-axis" aria-hidden="true">
+              <span>--.--</span>
+              <span>--.--</span>
+              <span>--.--</span>
+            </div>
+            <div class="chart-canvas">
+              <svg id="usdThbChart" class="trend-chart" viewBox="0 0 640 220" preserveAspectRatio="none" aria-label="USD to THB trend chart">
+                <path id="usdThbChartArea" class="trend-area" d=""></path>
+                <path id="usdThbChartLine" class="trend-line" d=""></path>
+              </svg>
+              <p id="chartEmpty" class="chart-empty">Waiting for enough USD/THB history to draw the graph.</p>
+            </div>
           </div>
           <div id="chartLabels" class="chart-labels"></div>
         </section>
       </header>
 
       <main class="content-grid">
-        <section class="panel converter-panel">
-          <div class="panel-heading">
-            <p class="eyebrow">Quick Converter</p>
-            <h2>Calculator</h2>
-          </div>
-
-          <form id="converterForm" class="converter-form">
-            <label>
-              Amount
-              <input id="amountInput" type="number" min="0" step="0.01" value="100" />
-            </label>
-
-            <div class="currency-row">
-              <label>
-                From
-                <select id="fromCurrency">
-                  <option value="USD">USD - US Dollar</option>
-                  <option value="EUR">EUR - Euro</option>
-                  <option value="USDT">USDT - Tether</option>
-                  <option value="THB">THB - Thai Baht</option>
-                </select>
-              </label>
-
-              <button id="swapButton" class="swap-button" type="button" aria-label="Swap currencies">
-                <span aria-hidden="true">&#8596;</span>
-              </button>
-
-              <label>
-                To
-                <select id="toCurrency">
-                  <option value="THB">THB - Thai Baht</option>
-                  <option value="USD">USD - US Dollar</option>
-                  <option value="EUR">EUR - Euro</option>
-                  <option value="USDT">USDT - Tether</option>
-                </select>
-              </label>
-            </div>
-          </form>
-
-          <div class="result-card">
-            <p class="meta-label">Converted amount</p>
-            <p id="conversionResult" class="conversion-result">Loading...</p>
-            <p id="conversionDetail" class="conversion-detail">Waiting for live quote.</p>
-          </div>
-        </section>
-
-        <section class="panel rates-panel">
-          <div class="panel-heading">
-            <p class="eyebrow">Live Snapshot</p>
-            <h2>Bid, ask, spread</h2>
-          </div>
-          <div id="rateCards" class="rate-cards" aria-live="polite"></div>
-        </section>
-
-        <section class="panel table-panel">
-          <div class="panel-heading">
-            <p class="eyebrow">Session Range</p>
-            <h2>Today's quote context</h2>
-          </div>
-
-          <div class="table-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>Metric</th>
-                  <th>Value</th>
-                </tr>
-              </thead>
-              <tbody id="metricsTableBody"></tbody>
-            </table>
-          </div>
-        </section>
-
         <section class="panel source-panel">
           <div class="eyebrow-pill">OANDA-backed live proxy</div>
           <p class="lede lede-compact">
-            Watch USD/THB, USDT/THB, and USDT/USD pricing through a lightweight Python relay, with automatic checks every 1 minute and an instant midpoint converter.
+            Watch USD/THB, USDT/THB, and USDT/USD pricing through a lightweight Python relay, with automatic checks every 1 minute.
           </p>
           <div class="status-strip source-status-strip">
             <div class="status-tile">

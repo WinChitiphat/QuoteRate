@@ -60,6 +60,11 @@ async function refreshDashboardCache() {
   const dashboard = await response.json();
   writeDashboardCache(dashboard);
   updateUsdThbHistory(dashboard);
+  window.dispatchEvent(
+    new CustomEvent("dashboard-refreshed", {
+      detail: { dashboard },
+    }),
+  );
 }
 
 function setRefreshButtonState(label, disabled = false) {

@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>QuoteRate | Arbitage</title>
+    <meta
+      name="description"
+      content="Analyse USD/THB and THB/USD synthetic arbitrage through USDT using QuoteRate."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <nav class="topbar">
+          <div class="brand-lockup">
+            <span class="brand-mark">QR</span>
+            <div>
+              <p class="eyebrow">QuoteRate</p>
+              <h1>Live Exchange Rate</h1>
+              <p class="page-context">Arbitage</p>
+            </div>
+          </div>
+          <a id="refreshNavButton" class="ghost-button ghost-link" href="./index.html">Refresh Now</a>
+        </nav>
+
+        <nav class="page-nav" aria-label="Primary">
+          <a class="page-nav-link" href="./index.html">Home</a>
+          <a class="page-nav-link is-active" href="./arbitage.html">Arbitage</a>
+          <a class="page-nav-link" href="./about.html">About</a>
+        </nav>
+
+        <p id="arbitageTimestamp" class="hero-timestamp">Waiting for the latest quote.</p>
+      </header>
+
+      <main class="static-page arbitage-page">
+        <section class="arbitage-grid">
+          <section class="panel static-panel arbitage-card">
+            <div class="panel-heading">
+              <p class="eyebrow">Route 1</p>
+              <h2>USD to THB to USD via USDT</h2>
+            </div>
+
+            <label class="arbitage-input-group">
+              Starting USD Amount
+              <input id="usdAmountInput" type="number" min="0" step="0.01" value="1000" />
+            </label>
+
+            <div class="arbitage-verdict-row">
+              <span class="meta-label">Verdict</span>
+              <strong id="usdVerdictBadge" class="arbitage-badge arbitage-badge-neutral">Waiting for quote</strong>
+            </div>
+
+            <div class="arbitage-summary">
+              <div class="arbitage-summary-block">
+                <span class="meta-label">Starting Capital</span>
+                <strong id="usdDirectOutput">--.-- USD</strong>
+              </div>
+              <div class="arbitage-summary-block arbitage-summary-block-highlight">
+                <span class="meta-label">Returned Capital</span>
+                <strong id="usdSyntheticOutput">--.-- USD</strong>
+              </div>
+            </div>
+
+            <div class="arbitage-diagram" aria-label="USD to THB cash flow">
+              <div class="flow-lane">
+                <div class="flow-block">
+                  <span class="meta-label">Start</span>
+                  <strong id="usdFlowStart">--.-- USD</strong>
+                </div>
+                <span class="flow-arrow" aria-hidden="true">&#8595;</span>
+                <div class="flow-block flow-block-accent">
+                  <span class="meta-label">Coinbase Buy USDT</span>
+                  <strong id="usdFlowCoinbase">--.-- USDT</strong>
+                  <span id="usdFlowCoinbaseMeta" class="flow-meta">Ask --.-- less 0.20%</span>
+                </div>
+                <span class="flow-arrow" aria-hidden="true">&#8595;</span>
+                <div class="flow-block flow-block-accent">
+                  <span class="meta-label">Bitkub Sell USDT</span>
+                  <strong id="usdFlowBitkub">--.-- THB</strong>
+                  <span id="usdFlowBitkubMeta" class="flow-meta">Bid --.-- less 0.16%</span>
+                </div>
+                <span class="flow-arrow" aria-hidden="true">&#8595;</span>
+                <div class="flow-block flow-block-accent">
+                  <span class="meta-label">OANDA Buy USD</span>
+                  <strong id="usdFlowReturn">--.-- USD</strong>
+                  <span id="usdFlowReturnMeta" class="flow-meta">Ask --.-- plus 0.08%</span>
+                </div>
+              </div>
+              <div class="flow-compare">
+                <div class="flow-block">
+                  <span class="meta-label">Round Trip Result</span>
+                  <strong id="usdFlowDirect">--.-- USD</strong>
+                  <span id="usdFlowDirectMeta" class="flow-meta">Back in USD after the OANDA return leg.</span>
+                </div>
+                <div class="flow-block flow-block-highlight">
+                  <span class="meta-label">Net Edge</span>
+                  <strong id="usdFlowEdge">--.-- USD</strong>
+                  <span id="usdFlowEdgeMeta" class="flow-meta">Waiting for quote.</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel static-panel arbitage-card">
+            <div class="panel-heading">
+              <p class="eyebrow">Route 2</p>
+              <h2>THB to USD to THB via USDT</h2>
+            </div>
+
+            <label class="arbitage-input-group">
+              Starting THB Amount
+              <input id="thbAmountInput" type="number" min="0" step="0.01" value="35000" />
+            </label>
+
+            <div class="arbitage-verdict-row">
+              <span class="meta-label">Verdict</span>
+              <strong id="thbVerdictBadge" class="arbitage-badge arbitage-badge-neutral">Waiting for quote</strong>
+            </div>
+
+            <div class="arbitage-summary">
+              <div class="arbitage-summary-block">
+                <span class="meta-label">Starting Capital</span>
+                <strong id="thbDirectOutput">--.-- THB</strong>
+              </div>
+              <div class="arbitage-summary-block arbitage-summary-block-highlight">
+                <span class="meta-label">Returned Capital</span>
+                <strong id="thbSyntheticOutput">--.-- THB</strong>
+              </div>
+            </div>
+
+            <div class="arbitage-diagram" aria-label="THB to USD cash flow">
+              <div class="flow-lane">
+                <div class="flow-block">
+                  <span class="meta-label">Start</span>
+                  <strong id="thbFlowStart">--.-- THB</strong>
+                </div>
+                <span class="flow-arrow" aria-hidden="true">&#8595;</span>
+                <div class="flow-block flow-block-accent">
+                  <span class="meta-label">Bitkub Buy USDT</span>
+                  <strong id="thbFlowBitkub">--.-- USDT</strong>
+                  <span id="thbFlowBitkubMeta" class="flow-meta">Ask --.-- less 0.16%</span>
+                </div>
+                <span class="flow-arrow" aria-hidden="true">&#8595;</span>
+                <div class="flow-block flow-block-accent">
+                  <span class="meta-label">Coinbase Sell USDT</span>
+                  <strong id="thbFlowCoinbase">--.-- USD</strong>
+                  <span id="thbFlowCoinbaseMeta" class="flow-meta">Bid --.-- less 0.20%</span>
+                </div>
+                <span class="flow-arrow" aria-hidden="true">&#8595;</span>
+                <div class="flow-block flow-block-accent">
+                  <span class="meta-label">OANDA Sell USD</span>
+                  <strong id="thbFlowReturn">--.-- THB</strong>
+                  <span id="thbFlowReturnMeta" class="flow-meta">Bid --.-- less 0.08%</span>
+                </div>
+              </div>
+              <div class="flow-compare">
+                <div class="flow-block">
+                  <span class="meta-label">Round Trip Result</span>
+                  <strong id="thbFlowDirect">--.-- THB</strong>
+                  <span id="thbFlowDirectMeta" class="flow-meta">Back in THB after the OANDA return leg.</span>
+                </div>
+                <div class="flow-block flow-block-highlight">
+                  <span class="meta-label">Net Edge</span>
+                  <strong id="thbFlowEdge">--.-- THB</strong>
+                  <span id="thbFlowEdgeMeta" class="flow-meta">Waiting for quote.</span>
+                </div>
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <section class="panel static-panel arbitage-intro-panel">
+          <div class="panel-heading">
+            <p class="eyebrow">Synthetic Route</p>
+            <h2>Check whether the USDT bridge beats the direct USD/THB reference</h2>
+          </div>
+          <p class="static-copy">
+            This page compares the direct OANDA USD/THB reference with a routed trade through USDT. Coinbase is charged at 0.2% and Bitkub at 0.16%. Rebalancing costs between USD and THB accounts are intentionally excluded, so the result focuses only on trading friction and live bid/ask pricing.
+          </p>
+          <div class="arbitage-fee-strip">
+            <div class="status-tile">
+              <span class="meta-label">Coinbase Fee</span>
+              <strong>0.20%</strong>
+            </div>
+            <div class="status-tile">
+              <span class="meta-label">Bitkub Fee</span>
+              <strong>0.16%</strong>
+            </div>
+            <div class="status-tile">
+              <span class="meta-label">OANDA Margin</span>
+              <strong>0.08%</strong>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel static-panel arbitage-reference-panel">
+          <div class="panel-heading">
+            <p class="eyebrow">Home Reference</p>
+            <h2>Same live values from the Home page</h2>
+          </div>
+          <div class="arbitage-reference-grid">
+            <article class="arbitage-reference-card">
+              <div class="quote-row">
+                <span class="pair-badge pair-badge-dark">USD/THB</span>
+                <span class="pulse-chip pulse-chip-dark">Live on OANDA</span>
+              </div>
+              <strong id="referenceUsdPrice" class="arbitage-reference-price">--.--</strong>
+              <p id="referenceUsdDetail" class="arbitage-reference-detail">Waiting for the latest quote.</p>
+              <div class="arbitage-reference-stats">
+                <div class="arbitage-detail-item">
+                  <span class="meta-label">Bid</span>
+                  <strong id="referenceUsdBid">--.--</strong>
+                </div>
+                <div class="arbitage-detail-item">
+                  <span class="meta-label">Ask</span>
+                  <strong id="referenceUsdAsk">--.--</strong>
+                </div>
+                <div class="arbitage-detail-item">
+                  <span class="meta-label">Spread</span>
+                  <strong id="referenceUsdSpread">--.--</strong>
+                </div>
+              </div>
+            </article>
+
+            <article class="arbitage-reference-card">
+              <div class="quote-row">
+                <span class="pair-badge pair-badge-dark">USDT/THB</span>
+                <span class="pulse-chip pulse-chip-dark">Live on Bitkub</span>
+              </div>
+              <strong id="referenceUsdtThbPrice" class="arbitage-reference-price">--.--</strong>
+              <p id="referenceUsdtThbDetail" class="arbitage-reference-detail">Waiting for the latest quote.</p>
+              <div class="arbitage-reference-stats">
+                <div class="arbitage-detail-item">
+                  <span class="meta-label">Bid</span>
+                  <strong id="referenceUsdtThbBid">--.--</strong>
+                </div>
+                <div class="arbitage-detail-item">
+                  <span class="meta-label">Ask</span>
+                  <strong id="referenceUsdtThbAsk">--.--</strong>
+                </div>
+                <div class="arbitage-detail-item">
+                  <span class="meta-label">Spread</span>
+                  <strong id="referenceUsdtThbSpread">--.--</strong>
+                </div>
+              </div>
+            </article>
+
+            <article class="arbitage-reference-card">
+              <div class="quote-row">
+                <span class="pair-badge pair-badge-dark">USDT/USD</span>
+                <span class="pulse-chip pulse-chip-dark">Live on Coinbase</span>
+              </div>
+              <strong id="referenceUsdtUsdPrice" class="arbitage-reference-price">--.--</strong>
+              <p id="referenceUsdtUsdDetail" class="arbitage-reference-detail">Waiting for the latest quote.</p>
+              <div class="arbitage-reference-stats">
+                <div class="arbitage-detail-item">
+                  <span class="meta-label">Bid</span>
+                  <strong id="referenceUsdtUsdBid">--.--</strong>
+                </div>
+                <div class="arbitage-detail-item">
+                  <span class="meta-label">Ask</span>
+                  <strong id="referenceUsdtUsdAsk">--.--</strong>
+                </div>
+                <div class="arbitage-detail-item">
+                  <span class="meta-label">Spread</span>
+                  <strong id="referenceUsdtUsdSpread">--.--</strong>
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
+      </main>
+    </div>
+    <script src="nav.js"></script>
+    <script src="arbitage.js"></script>
+  </body>
+</html>

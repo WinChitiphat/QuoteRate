@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 from urllib.error import URLError
 from urllib.parse import urlparse
-from urllib.request import Request, urlopen
+from urllib.request import ProxyHandler, Request, build_opener
 
 
 HOST = "0.0.0.0"
@@ -19,6 +19,7 @@ STREAM_URL_TEMPLATE = "https://labs-api.oanda.com/v2/rates?instruments={instrume
 BITKUB_DEPTH_URL = "https://api.bitkub.com/api/market/depth?sym=THB_USDT&lmt=1"
 COINBASE_BOOK_URL = "https://api.exchange.coinbase.com/products/USDT-USD/book?level=1"
 BASE_DIR = Path(__file__).resolve().parent
+NO_PROXY_OPENER = build_opener(ProxyHandler({}))
 UPSTREAM_ERRORS = (
     TimeoutError,
     socket.timeout,
@@ -82,7 +83,7 @@ def fetch_oanda_quote(instrument: str) -> dict[str, Any]:
         },
     )
 
-    with urlopen(request, timeout=10) as response:
+    with NO_PROXY_OPENER.open(request, timeout=10) as response:
         for raw_line in response:
             line = raw_line.decode("utf-8", "ignore").strip()
             if not line or not line.startswith("data:"):
@@ -105,7 +106,7 @@ def fetch_json(url: str, headers: dict[str, str] | None = None) -> dict[str, Any
         },
     )
 
-    with urlopen(request, timeout=10) as response:
+    with NO_PROXY_OPENER.open(request, timeout=10) as response:
         return json.load(response)
 
 
